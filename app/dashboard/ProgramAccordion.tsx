@@ -21,7 +21,7 @@ type Program = {
 
 type ProgramModuleRow = {
   program_id: string
-  modules: Module | null
+  modules: Module | Module[] | null
 }
 
 function getTypeLabel(module: Module): string {
@@ -72,8 +72,11 @@ export default function ProgramAccordion({
 
         const allModules = (programModules || [])
           .filter((pm) => pm.program_id === program.id)
-          .map((pm) => pm.modules)
-          .filter(Boolean) as Module[]
+          .flatMap((pm) => {
+            if (!pm.modules) return []
+            if (Array.isArray(pm.modules)) return pm.modules
+            return [pm.modules]
+          }) as Module[]
 
         // Filter by search
         const query = search.trim().toLowerCase()
