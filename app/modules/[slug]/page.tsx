@@ -33,11 +33,25 @@ export default async function ModulePage({
     .select('study_days, grade, passed')
     .eq('module_id', module.id)
 
-  const { data: initialMessages } = await supabase
+  const { data: rawMessages, error: messagesError } = await supabase
     .from('chat_messages')
-    .select('*, profiles(username)')
+    .select('*')
     .eq('module_id', module.id)
     .order('created_at', { ascending: true })
+
+  // Fetch profiles separately (avoids FK-join issues)
+  const uniqueUserIds = [...new Set((rawMessages ?? []).map((m: any) => m.user_id).filter(Boolean))]
+  const { data: profilesData } = uniqueUserIds.length > 0
+    ? await supabase.from('profiles').select('id, username').in('id', uniqueUserIds)
+    : { data: [] as { id: string; username: string | null }[] }
+
+  const profileMap: Record<string, { username: string | null }> = {}
+  for (const p of profilesData ?? []) profileMap[p.id] = { username: p.username }
+
+  const initialMessages = (rawMessages ?? []).map((m: any) => ({
+    ...m,
+    profiles: profileMap[m.user_id] ?? null,
+  }))
 
   const { data: materials } = await supabase
     .from('materials')
@@ -159,7 +173,9 @@ export default async function ModulePage({
         {/* Live-Chat */}
         <div>
           <h2 className="text-sm font-bold text-gray-700 mb-2 px-1">💬 Live-Chat</h2>
-          <p className="text-xs text-gray-400 mb-1 px-1">Debug: {initialMessages?.length ?? 0} Nachrichten geladen (module_id: {module.id.slice(0,8)})</p>
+          <div style={{ background: '#FF4444', color: 'white', padding: '6px 10px', borderRadius: '8px', marginBottom: '8px', fontSize: '12px', fontWeight: 'bold' }}>
+            🔍 DEBUG: {messagesError ? `FEHLER: ${messagesError.message}` : `${initialMessages.length} Nachrichten geladen`} · module_id: {module.id.slice(0,8)} · profile-join umgangen
+          </div>
           <Chat
             moduleId={module.id}
             userId={user.id}
