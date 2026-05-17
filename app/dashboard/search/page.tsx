@@ -3,7 +3,6 @@ import { createClient } from '@/lib/supabase/server'
 import { logout } from '@/app/auth/actions'
 import Link from 'next/link'
 import ProgramAccordion from '../ProgramAccordion'
-import StarButton from './StarButton'
 
 export default async function ModuleSearchPage() {
   const supabase = await createClient()
