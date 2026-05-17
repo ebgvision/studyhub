@@ -58,7 +58,7 @@ export default async function DashboardPage() {
         {programs && programs.length > 0 ? (
           <ProgramAccordion
             programs={programs}
-            programModules={programModules ?? []}
+            programModules={(programModules ?? []) as any[]}
           />
         ) : (
           <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-12 text-center">
