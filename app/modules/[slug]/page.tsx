@@ -173,9 +173,6 @@ export default async function ModulePage({
         {/* Live-Chat */}
         <div>
           <h2 className="text-sm font-bold text-gray-700 mb-2 px-1">💬 Live-Chat</h2>
-          <div style={{ background: '#FF4444', color: 'white', padding: '6px 10px', borderRadius: '8px', marginBottom: '8px', fontSize: '12px', fontWeight: 'bold' }}>
-            🔍 DEBUG: {messagesError ? `FEHLER: ${messagesError.message}` : `${initialMessages.length} Nachrichten geladen`} · module_id: {module.id.slice(0,8)} · profile-join umgangen
-          </div>
           <Chat
             moduleId={module.id}
             userId={user.id}
