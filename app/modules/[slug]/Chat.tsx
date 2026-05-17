@@ -36,18 +36,6 @@ export default function Chat({
   const inputRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
 
-  // Nachrichten beim Mount aus DB laden (Fix für verschwindende Nachrichten)
-  useEffect(() => {
-    supabase
-      .from('chat_messages')
-      .select('*, profiles(username)')
-      .eq('module_id', moduleId)
-      .order('created_at', { ascending: true })
-      .then(({ data }) => {
-        if (data && data.length > 0) setMessages(data as Message[])
-      })
-  }, [moduleId])
-
   // Realtime Subscription
   useEffect(() => {
     const channel = supabase

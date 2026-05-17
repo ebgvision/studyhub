@@ -159,6 +159,7 @@ export default async function ModulePage({
         {/* Live-Chat */}
         <div>
           <h2 className="text-sm font-bold text-gray-700 mb-2 px-1">💬 Live-Chat</h2>
+          <p className="text-xs text-gray-400 mb-1 px-1">Debug: {initialMessages?.length ?? 0} Nachrichten geladen (module_id: {module.id.slice(0,8)})</p>
           <Chat
             moduleId={module.id}
             userId={user.id}
