@@ -16,7 +16,8 @@ export async function submitStats(formData: FormData) {
   const studyDays = parseInt(formData.get('study_days') as string)
   const gradeRaw = formData.get('grade') as string
   const grade = gradeRaw && gradeRaw !== '' ? parseFloat(gradeRaw) : null
-  const passed = formData.get('passed') === 'true'
+  // 5.0 = nicht bestanden, alles andere = bestanden (wenn Note angegeben)
+  const passed = grade !== null ? grade < 5.0 : true
 
   // Prüfen ob User schon eine Statistik für dieses Modul hat
   const { data: existing } = await supabase
