@@ -35,6 +35,9 @@ export default async function DashboardPage() {
           </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-gray-500 hidden sm:block">{user.email}</span>
+            <Link href="/settings" className="text-sm text-gray-400 hover:text-teal-600 transition-colors">
+              ⚙️ Einstellungen
+            </Link>
             <form action={logout}>
               <button type="submit" className="text-sm text-gray-400 hover:text-red-500 transition-colors">
                 Ausloggen
