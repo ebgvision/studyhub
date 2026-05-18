@@ -20,7 +20,8 @@ export default async function ModulePage({
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase.from('profiles').select('username').eq('id', user.id).single()
+  const { data: profile } = await supabase.from('profiles').select('username, is_anonymous, is_admin').eq('id', user.id).single()
+  const isAdmin = profile?.is_admin ?? false
 
   const { data: module } = await supabase
     .from('modules')
@@ -55,7 +56,7 @@ export default async function ModulePage({
     profiles: profileMap[m.user_id] ?? null,
   }))
 
-  const currentUserAnonymous = (await supabase.from('profiles').select('is_anonymous').eq('id', user.id).single()).data?.is_anonymous ?? false
+  const currentUserAnonymous = profile?.is_anonymous ?? false
 
   const { data: materials } = await supabase
     .from('materials')
@@ -186,6 +187,7 @@ export default async function ModulePage({
             moduleId={module.id}
             userId={user.id}
             isAnonymous={currentUserAnonymous}
+            isAdmin={isAdmin}
             initialMessages={initialMessages ?? []}
           />
         </div>
@@ -199,6 +201,7 @@ export default async function ModulePage({
               userId={user.id}
               currentUsername={profile?.username ?? null}
               isAnonymous={currentUserAnonymous}
+              isAdmin={isAdmin}
               likedIds={(myMaterialLikes ?? []).map(l => l.material_id)}
               outdatedIds={(myOutdatedFlags ?? []).map(f => f.material_id)}
             />

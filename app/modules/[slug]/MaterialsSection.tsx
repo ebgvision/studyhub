@@ -162,6 +162,7 @@ export default function MaterialsSection({
   userId,
   currentUsername,
   isAnonymous,
+  isAdmin,
   likedIds: initialLikedIds,
   outdatedIds: initialOutdatedIds,
 }: {
@@ -169,6 +170,7 @@ export default function MaterialsSection({
   userId: string
   currentUsername: string | null
   isAnonymous: boolean
+  isAdmin: boolean
   likedIds: string[]
   outdatedIds: string[]
 }) {
@@ -303,6 +305,24 @@ export default function MaterialsSection({
     setSubmitting(false)
   }
 
+  async function deleteMaterial(material: Material) {
+    if (!confirm(`"${material.title}" wirklich löschen?`)) return
+    await supabase.from('materials').delete().eq('id', material.id)
+    setMaterials(prev => prev.filter(m => m.id !== material.id))
+  }
+
+  async function deleteComment(materialId: string, commentId: string) {
+    if (!confirm('Kommentar wirklich löschen?')) return
+    await supabase.from('material_comments').delete().eq('id', commentId)
+    const newCount = Math.max(0, (materials.find(m => m.id === materialId)?.comment_count ?? 1) - 1)
+    await supabase.from('materials').update({ comment_count: newCount }).eq('id', materialId)
+    setMaterials(prev => prev.map(m => m.id === materialId ? { ...m, comment_count: newCount } : m))
+    setCommentsCache(prev => ({
+      ...prev,
+      [materialId]: (prev[materialId] ?? []).filter(c => c.id !== commentId),
+    }))
+  }
+
   const sorted = [...materials].sort((a, b) => {
     if (sortBy === 'date') return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     return b.like_count - a.like_count
@@ -422,6 +442,15 @@ export default function MaterialsSection({
                   >
                     🕐 {material.outdated_count > 0 ? material.outdated_count : ''} Veraltet
                   </button>
+                  {isAdmin && (
+                    <button
+                      onClick={() => deleteMaterial(material)}
+                      className="flex items-center gap-1 text-xs text-gray-300 hover:text-red-500 transition-colors"
+                      title="Material löschen"
+                    >
+                      🗑 Löschen
+                    </button>
+                  )}
                   <button
                     onClick={() => toggleComments(material)}
                     className={`flex items-center gap-1 text-xs transition-colors ml-auto ${isCommentsOpen ? 'text-teal-600 font-medium' : 'text-gray-400 hover:text-teal-500'}`}
@@ -464,6 +493,15 @@ export default function MaterialsSection({
                                 <span className="text-xs text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
                                   {formatTime(comment.created_at)}
                                 </span>
+                              )}
+                              {isAdmin && (
+                                <button
+                                  onClick={() => deleteComment(material.id, comment.id)}
+                                  className="text-xs text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity ml-1 flex-shrink-0"
+                                  title="Kommentar löschen"
+                                >
+                                  🗑
+                                </button>
                               )}
                             </div>
                           </div>

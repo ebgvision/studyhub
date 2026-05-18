@@ -19,11 +19,13 @@ export default function Chat({
   moduleId,
   userId,
   isAnonymous,
+  isAdmin,
   initialMessages,
 }: {
   moduleId: string
   userId: string
   isAnonymous: boolean
+  isAdmin: boolean
   initialMessages: Message[]
 }) {
   const [messages, setMessages] = useState<Message[]>(initialMessages)
@@ -99,6 +101,12 @@ export default function Chat({
     setContent('')
     setReplyTo(null)
     setSending(false)
+  }
+
+  async function deleteMessage(messageId: string) {
+    if (!confirm('Nachricht wirklich löschen?')) return
+    await supabase.from('chat_messages').delete().eq('id', messageId)
+    setMessages((prev) => prev.filter((m) => m.id !== messageId && m.parent_id !== messageId))
   }
 
   async function toggleLike(message: Message) {
@@ -191,8 +199,10 @@ export default function Chat({
                 isOwn={msg.user_id === userId}
                 liked={likedIds.has(msg.id)}
                 isGrouped={isGrouped}
+                isAdmin={isAdmin}
                 onLike={() => toggleLike(msg)}
                 onComment={() => focusInput(msg)}
+                onDelete={() => deleteMessage(msg.id)}
                 formatTime={formatTime}
               />
 
@@ -209,8 +219,10 @@ export default function Chat({
                         isOwn={reply.user_id === userId}
                         liked={likedIds.has(reply.id)}
                         isGrouped={replyGrouped}
+                        isAdmin={isAdmin}
                         onLike={() => toggleLike(reply)}
                         onComment={() => focusInput(msg)}
+                        onDelete={() => deleteMessage(reply.id)}
                         formatTime={formatTime}
                         isReply
                       />
@@ -281,14 +293,16 @@ export default function Chat({
 }
 
 function MessageRow({
-  msg, isOwn, liked, isGrouped, onLike, onComment, formatTime, isReply = false,
+  msg, isOwn, liked, isGrouped, isAdmin, onLike, onComment, onDelete, formatTime, isReply = false,
 }: {
   msg: Message
   isOwn: boolean
   liked: boolean
   isGrouped: boolean
+  isAdmin: boolean
   onLike: () => void
   onComment: () => void
+  onDelete: () => void
   formatTime: (s: string) => string
   isReply?: boolean
 }) {
@@ -335,6 +349,15 @@ function MessageRow({
                 title="Kommentieren"
               >
                 ↩
+              </button>
+            )}
+            {isAdmin && (
+              <button
+                onClick={onDelete}
+                className="text-xs px-1.5 py-0.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors"
+                title="Löschen"
+              >
+                🗑
               </button>
             )}
           </div>
