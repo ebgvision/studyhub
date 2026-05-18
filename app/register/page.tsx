@@ -86,7 +86,7 @@ async function SuccessOrForm({
           name="email"
           type="email"
           required
-          placeholder="deine@email.de"
+          placeholder="vorname.nachname@hs-koblenz.de"
           className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition"
         />
       </div>
@@ -120,7 +120,7 @@ async function SuccessOrForm({
       </button>
 
       <p className="text-xs text-gray-400 text-center">
-        Mit der Registrierung stimmst du zu, die Community-Regeln einzuhalten.
+        Nur für Studierende der HS Koblenz (@hs-koblenz.de).
       </p>
     </form>
   )

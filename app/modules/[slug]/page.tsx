@@ -44,16 +44,18 @@ export default async function ModulePage({
   // Fetch profiles separately (avoids FK-join issues)
   const uniqueUserIds = [...new Set((rawMessages ?? []).map((m: any) => m.user_id).filter(Boolean))]
   const { data: profilesData } = uniqueUserIds.length > 0
-    ? await supabase.from('profiles').select('id, username').in('id', uniqueUserIds)
-    : { data: [] as { id: string; username: string | null }[] }
+    ? await supabase.from('profiles').select('id, username, is_anonymous').in('id', uniqueUserIds)
+    : { data: [] as { id: string; username: string | null; is_anonymous: boolean }[] }
 
-  const profileMap: Record<string, { username: string | null }> = {}
-  for (const p of profilesData ?? []) profileMap[p.id] = { username: p.username }
+  const profileMap: Record<string, { username: string | null; is_anonymous: boolean }> = {}
+  for (const p of profilesData ?? []) profileMap[p.id] = { username: p.username, is_anonymous: p.is_anonymous }
 
   const initialMessages = (rawMessages ?? []).map((m: any) => ({
     ...m,
     profiles: profileMap[m.user_id] ?? null,
   }))
+
+  const currentUserAnonymous = (await supabase.from('profiles').select('is_anonymous').eq('id', user.id).single()).data?.is_anonymous ?? false
 
   const { data: materials } = await supabase
     .from('materials')
@@ -104,11 +106,16 @@ export default async function ModulePage({
             <span className="text-gray-200">/</span>
             <span className="text-sm text-gray-600 font-medium truncate max-w-[200px]">{module.name}</span>
           </div>
-          <form action={logout}>
-            <button type="submit" className="text-sm text-gray-400 hover:text-red-500 transition-colors">
-              Ausloggen
-            </button>
-          </form>
+          <div className="flex items-center gap-4">
+            <Link href="/settings" className="text-sm text-gray-400 hover:text-teal-600 transition-colors">
+              ⚙️ Einstellungen
+            </Link>
+            <form action={logout}>
+              <button type="submit" className="text-sm text-gray-400 hover:text-red-500 transition-colors">
+                Ausloggen
+              </button>
+            </form>
+          </div>
         </div>
       </nav>
 
@@ -178,6 +185,7 @@ export default async function ModulePage({
           <Chat
             moduleId={module.id}
             userId={user.id}
+            isAnonymous={currentUserAnonymous}
             initialMessages={initialMessages ?? []}
           />
         </div>
@@ -190,6 +198,7 @@ export default async function ModulePage({
               initialMaterials={materials ?? []}
               userId={user.id}
               currentUsername={profile?.username ?? null}
+              isAnonymous={currentUserAnonymous}
               likedIds={(myMaterialLikes ?? []).map(l => l.material_id)}
               outdatedIds={(myOutdatedFlags ?? []).map(f => f.material_id)}
             />

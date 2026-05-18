@@ -161,12 +161,14 @@ export default function MaterialsSection({
   initialMaterials,
   userId,
   currentUsername,
+  isAnonymous,
   likedIds: initialLikedIds,
   outdatedIds: initialOutdatedIds,
 }: {
   initialMaterials: Material[]
   userId: string
   currentUsername: string | null
+  isAnonymous: boolean
   likedIds: string[]
   outdatedIds: string[]
 }) {
@@ -251,10 +253,10 @@ export default function MaterialsSection({
       .order('created_at', { ascending: true })
 
     const userIds = [...new Set((data ?? []).map((c: any) => c.user_id).filter(Boolean))]
-    let profileMap: Record<string, string | null> = {}
+    let profileMap: Record<string, { username: string | null; is_anonymous: boolean }> = {}
     if (userIds.length > 0) {
-      const { data: profiles } = await supabase.from('profiles').select('id, username').in('id', userIds)
-      for (const p of (profiles ?? [])) profileMap[p.id] = p.username
+      const { data: profiles } = await supabase.from('profiles').select('id, username, is_anonymous').in('id', userIds)
+      for (const p of (profiles ?? [])) profileMap[p.id] = { username: p.username, is_anonymous: p.is_anonymous }
     }
 
     const comments: Comment[] = (data ?? []).map((c: any) => ({
@@ -262,7 +264,7 @@ export default function MaterialsSection({
       content: c.content,
       created_at: c.created_at,
       user_id: c.user_id,
-      username: profileMap[c.user_id] ?? null,
+      username: profileMap[c.user_id]?.is_anonymous ? 'Anonym' : (profileMap[c.user_id]?.username ?? null),
     }))
 
     setCommentsCache(prev => ({ ...prev, [material.id]: comments }))
@@ -290,7 +292,7 @@ export default function MaterialsSection({
         content: inserted.content,
         created_at: inserted.created_at,
         user_id: userId,
-        username: currentUsername,
+        username: isAnonymous ? 'Anonym' : currentUsername,
       }
       setCommentsCache(prev => ({
         ...prev,

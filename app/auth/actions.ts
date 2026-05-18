@@ -29,6 +29,10 @@ export async function register(formData: FormData) {
   const password = formData.get('password') as string
   const username = formData.get('username') as string
 
+  if (!email.endsWith('@hs-koblenz.de')) {
+    redirect('/register?error=' + encodeURIComponent('Nur HS-Koblenz E-Mail-Adressen (@hs-koblenz.de) sind erlaubt.'))
+  }
+
   const { error } = await supabase.auth.signUp({
     email,
     password,

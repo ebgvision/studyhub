@@ -10,7 +10,7 @@ type Message = {
   like_count: number
   parent_id: string | null
   user_id: string | null
-  profiles: { username: string | null } | null
+  profiles: { username: string | null; is_anonymous: boolean } | null
 }
 
 const SHOW_INITIALLY = 3
@@ -18,10 +18,12 @@ const SHOW_INITIALLY = 3
 export default function Chat({
   moduleId,
   userId,
+  isAnonymous,
   initialMessages,
 }: {
   moduleId: string
   userId: string
+  isAnonymous: boolean
   initialMessages: Message[]
 }) {
   const [messages, setMessages] = useState<Message[]>(initialMessages)
@@ -47,7 +49,7 @@ export default function Chat({
         filter: `module_id=eq.${moduleId}`,
       }, async (payload) => {
         const { data: profile } = await supabase
-          .from('profiles').select('username').eq('id', payload.new.user_id).single()
+          .from('profiles').select('username, is_anonymous').eq('id', payload.new.user_id).single()
         const newMsg: Message = { ...(payload.new as Message), profiles: profile }
         setMessages((prev) => [...prev, newMsg])
         setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
@@ -296,7 +298,7 @@ function MessageRow({
       <div className="flex-shrink-0 w-6 mt-0.5">
         {!isGrouped ? (
           <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${isOwn ? 'bg-teal-500 text-white' : 'bg-gray-200 text-gray-600'}`}>
-            {(msg.profiles?.username ?? 'A')[0].toUpperCase()}
+            {isOwn ? 'D' : (msg.profiles?.is_anonymous ? '?' : (msg.profiles?.username ?? 'A')[0].toUpperCase())}
           </div>
         ) : null}
       </div>
@@ -307,7 +309,7 @@ function MessageRow({
         {!isGrouped && (
           <div className="flex items-baseline gap-1.5 mb-0.5">
             <span className="text-xs font-semibold text-gray-700">
-              {isOwn ? 'Du' : (msg.profiles?.username ?? 'Anonym')}
+              {isOwn ? 'Du' : (msg.profiles?.is_anonymous ? 'Anonym' : (msg.profiles?.username ?? 'Anonym'))}
             </span>
           </div>
         )}
