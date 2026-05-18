@@ -98,19 +98,18 @@ export default async function ModulePage({
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Navbar */}
-      <nav className="bg-white border-b border-gray-100 px-6 py-3">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/dashboard" className="text-gray-400 hover:text-teal-600 transition-colors text-sm">
-              ← Dashboard
+      <nav className="bg-white border-b border-gray-100 px-4 py-3">
+        <div className="max-w-4xl mx-auto flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <Link href="/dashboard" className="text-gray-400 hover:text-teal-600 transition-colors text-sm flex-shrink-0">
+              ← <span className="hidden sm:inline">Dashboard</span>
             </Link>
-            <span className="text-gray-200">/</span>
-            <span className="text-sm text-gray-600 font-medium truncate max-w-[200px]">{module.name}</span>
+            <span className="text-gray-200 flex-shrink-0">/</span>
+            <span className="text-sm text-gray-600 font-medium truncate">{module.name}</span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-shrink-0">
             <Link href="/settings" className="text-sm text-gray-400 hover:text-teal-600 transition-colors">
-              <span className="hidden sm:inline">⚙️ Einstellungen</span>
-              <span className="sm:hidden">⚙️</span>
+              ⚙️
             </Link>
             <form action={logout}>
               <button type="submit" className="text-sm text-gray-400 hover:text-red-500 transition-colors">

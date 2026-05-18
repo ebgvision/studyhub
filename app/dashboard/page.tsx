@@ -56,21 +56,23 @@ export default async function DashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Navbar */}
-      <nav className="bg-white border-b border-gray-100 px-6 py-3">
+      <nav className="bg-white border-b border-gray-100 px-4 py-3">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
+          {/* Logo */}
           <div className="flex items-center gap-2">
             <span className="text-lg font-bold text-teal-600">StudyHub</span>
-            <span className="text-xs bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full font-medium">HS Koblenz</span>
+            <span className="hidden sm:inline text-xs bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full font-medium">HS Koblenz</span>
           </div>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-500 hidden sm:block">{user.email}</span>
-            <Link href="/settings" className="text-sm text-gray-400 hover:text-teal-600 transition-colors">
-              <span className="hidden sm:inline">⚙️ Einstellungen</span>
-              <span className="sm:hidden">⚙️</span>
+          {/* Aktionen */}
+          <div className="flex items-center gap-3">
+            <span className="hidden md:block text-sm text-gray-400 truncate max-w-[200px]">{user.email}</span>
+            <Link href="/settings" className="flex items-center gap-1 text-sm text-gray-400 hover:text-teal-600 transition-colors">
+              ⚙️ <span className="hidden sm:inline">Einstellungen</span>
             </Link>
             <form action={logout}>
               <button type="submit" className="text-sm text-gray-400 hover:text-red-500 transition-colors">
-                Ausloggen
+                <span className="hidden sm:inline">Ausloggen</span>
+                <span className="sm:hidden text-base">↩</span>
               </button>
             </form>
           </div>
@@ -79,36 +81,35 @@ export default async function DashboardPage() {
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
 
-        {/* Campus Banner kompakt */}
-        <div className="bg-teal-600 text-white rounded-2xl px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        {/* Campus Banner */}
+        <div className="bg-teal-600 text-white rounded-2xl px-5 py-4 flex flex-col gap-3">
           <div>
-            <div className="text-xs font-medium text-teal-200 mb-0.5">Fachbereich</div>
-            <div className="text-lg font-bold leading-snug">Wirtschafts- und Sozialwissenschaften</div>
-            <div className="text-teal-300 text-xs mt-0.5">RheinAhrCampus Remagen · HS Koblenz</div>
+            <div className="text-xs font-medium text-teal-200 mb-0.5">Fachbereich · HS Koblenz</div>
+            <div className="text-base sm:text-lg font-bold leading-snug">Wirtschafts- und Sozialwissenschaften</div>
+            <div className="text-teal-300 text-xs mt-0.5">RheinAhrCampus Remagen</div>
           </div>
           <Link
             href="/dashboard/search"
-            className="self-start sm:self-auto flex-shrink-0 bg-white text-teal-700 px-4 py-2 rounded-xl text-sm font-bold hover:bg-teal-50 transition-colors"
+            className="self-start bg-white text-teal-700 px-4 py-2 rounded-xl text-sm font-bold hover:bg-teal-50 transition-colors"
           >
             🔍 Module suchen
           </Link>
         </div>
 
-        {/* Favoriten (Sterne) */}
+        {/* Favoriten */}
         <FavoritesSection allModules={modules ?? []} userId={user.id} initialFavoriteIds={favoriteModuleIds} />
 
         {/* Feedback-Bereich */}
         <div>
-          {/* Mitmach-Banner */}
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 mb-3">
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-4 mb-3">
             <div className="flex items-start gap-3">
-              <span className="text-2xl">💬</span>
+              <span className="text-xl flex-shrink-0">💬</span>
               <div>
                 <h2 className="text-sm font-bold text-amber-800">Deine Meinung zählt!</h2>
                 <p className="text-xs text-amber-700 mt-0.5 leading-relaxed">
                   StudyHub ist noch in der Entwicklung — hilf uns, es besser zu machen!
-                  Schreib uns deine <strong>Wünsche, Ideen oder Verbesserungsvorschläge</strong> direkt hier rein.
-                  Jedes Feedback hilft uns weiter. 🙏
+                  Schreib uns deine <strong>Wünsche, Ideen oder Verbesserungsvorschläge</strong>.
+                  Jedes Feedback hilft! 🙏
                 </p>
               </div>
             </div>
