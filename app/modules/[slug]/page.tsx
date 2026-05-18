@@ -20,6 +20,8 @@ export default async function ModulePage({
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
+  const { data: profile } = await supabase.from('profiles').select('username').eq('id', user.id).single()
+
   const { data: module } = await supabase
     .from('modules')
     .select('*')
@@ -187,6 +189,7 @@ export default async function ModulePage({
             <MaterialsSection
               initialMaterials={materials ?? []}
               userId={user.id}
+              currentUsername={profile?.username ?? null}
               likedIds={(myMaterialLikes ?? []).map(l => l.material_id)}
               outdatedIds={(myOutdatedFlags ?? []).map(f => f.material_id)}
             />
