@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/client'
 
 type Module = {
   id: string
@@ -12,27 +13,34 @@ type Module = {
   module_type: string
 }
 
-const STORAGE_KEY = 'studyhub_favorites'
+export default function FavoritesSection({
+  allModules,
+  userId,
+  initialFavoriteIds,
+}: {
+  allModules: Module[]
+  userId: string
+  initialFavoriteIds: string[]
+}) {
+  const [favoriteIds, setFavoriteIds] = useState<string[]>(initialFavoriteIds)
+  const supabase = createClient()
 
-export default function FavoritesSection({ allModules }: { allModules: Module[] }) {
-  const [favorites, setFavorites] = useState<string[]>([]) // slugs
-
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY)
-      if (stored) setFavorites(JSON.parse(stored))
-    } catch {}
-  }, [])
-
-  function toggleFavorite(slug: string) {
-    setFavorites((prev) => {
-      const next = prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug]
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
-      return next
-    })
+  async function toggleFavorite(module: Module) {
+    const isFav = favoriteIds.includes(module.id)
+    if (isFav) {
+      setFavoriteIds((prev) => prev.filter((id) => id !== module.id))
+      await supabase.from('module_favorites')
+        .delete()
+        .eq('user_id', userId)
+        .eq('module_id', module.id)
+    } else {
+      setFavoriteIds((prev) => [...prev, module.id])
+      await supabase.from('module_favorites')
+        .insert({ user_id: userId, module_id: module.id })
+    }
   }
 
-  const favModules = allModules.filter((m) => favorites.includes(m.slug))
+  const favModules = allModules.filter((m) => favoriteIds.includes(m.id))
 
   return (
     <div>
@@ -60,10 +68,10 @@ export default function FavoritesSection({ allModules }: { allModules: Module[] 
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {favModules.map((module) => (
-            <div key={module.slug} className="bg-white rounded-xl border border-gray-100 p-3 flex items-start gap-3 hover:border-teal-300 hover:shadow-sm transition-all group">
+            <div key={module.id} className="bg-white rounded-xl border border-gray-100 p-3 flex items-start gap-3 hover:border-teal-300 hover:shadow-sm transition-all group">
               <button
-                onClick={() => toggleFavorite(module.slug)}
-                className="text-yellow-400 hover:text-yellow-500 flex-shrink-0 mt-0.5 transition-colors"
+                onClick={() => toggleFavorite(module)}
+                className="text-yellow-400 hover:text-gray-300 flex-shrink-0 mt-0.5 transition-colors"
                 title="Stern entfernen"
               >
                 ★

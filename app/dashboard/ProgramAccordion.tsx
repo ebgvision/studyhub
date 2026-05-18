@@ -1,27 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
-
-const STORAGE_KEY = 'studyhub_favorites'
-
-function useFavorites() {
-  const [favorites, setFavorites] = useState<string[]>([])
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY)
-      if (stored) setFavorites(JSON.parse(stored))
-    } catch {}
-  }, [])
-  function toggle(slug: string) {
-    setFavorites((prev) => {
-      const next = prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug]
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
-      return next
-    })
-  }
-  return { favorites, toggle }
-}
+import { createClient } from '@/lib/supabase/client'
 
 type Module = {
   id: string
@@ -69,14 +50,30 @@ const TYPE_CARD: Record<string, string> = {
 export default function ProgramAccordion({
   programs,
   programModules,
+  userId,
+  initialFavoriteIds,
 }: {
   programs: Program[]
   programModules: any[]
+  userId: string
+  initialFavoriteIds: string[]
 }) {
   const [openPrograms, setOpenPrograms] = useState<string[]>([])
   const [sortBy, setSortBy] = useState<'semester' | 'alpha'>('semester')
-  const { favorites, toggle: toggleFav } = useFavorites()
+  const [favoriteIds, setFavoriteIds] = useState<string[]>(initialFavoriteIds)
   const [search, setSearch] = useState('')
+  const supabase = createClient()
+
+  async function toggleFav(module: Module) {
+    const isFav = favoriteIds.includes(module.id)
+    if (isFav) {
+      setFavoriteIds((prev) => prev.filter((id) => id !== module.id))
+      await supabase.from('module_favorites').delete().eq('user_id', userId).eq('module_id', module.id)
+    } else {
+      setFavoriteIds((prev) => [...prev, module.id])
+      await supabase.from('module_favorites').insert({ user_id: userId, module_id: module.id })
+    }
+  }
   const [openSemesters, setOpenSemesters] = useState<Record<string, Set<number>>>({})
 
   function toggleProgram(programId: string) {
@@ -232,7 +229,7 @@ export default function ProgramAccordion({
                           {semOpen && (
                             <div className="p-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                               {semModules.map((module) => (
-                                <ModuleCard key={module.id} module={module} isFav={favorites.includes(module.slug)} onToggleFav={() => toggleFav(module.slug)} />
+                                <ModuleCard key={module.id} module={module} isFav={favoriteIds.includes(module.id)} onToggleFav={() => toggleFav(module)} />
                               ))}
                             </div>
                           )}
@@ -243,7 +240,7 @@ export default function ProgramAccordion({
                     // A-Z: flache Liste
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                       {sorted.map((module) => (
-                        <ModuleCard key={module.id} module={module} isFav={favorites.includes(module.slug)} onToggleFav={() => toggleFav(module.slug)} />
+                        <ModuleCard key={module.id} module={module} isFav={favoriteIds.includes(module.id)} onToggleFav={() => toggleFav(module)} />
                       ))}
                     </div>
                   )}

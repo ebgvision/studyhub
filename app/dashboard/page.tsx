@@ -17,6 +17,13 @@ export default async function DashboardPage() {
     .select('id, name, slug, code, semester, module_type')
     .order('name')
 
+  const { data: favRows } = await supabase
+    .from('module_favorites')
+    .select('module_id')
+    .eq('user_id', user.id)
+
+  const favoriteModuleIds = (favRows ?? []).map((r) => r.module_id)
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Navbar */}
@@ -55,7 +62,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Favoriten (Sterne) */}
-        <FavoritesSection allModules={modules ?? []} />
+        <FavoritesSection allModules={modules ?? []} userId={user.id} initialFavoriteIds={favoriteModuleIds} />
 
       </main>
     </div>

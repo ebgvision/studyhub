@@ -21,6 +21,13 @@ export default async function ModuleSearchPage() {
     .from('program_modules')
     .select('program_id, modules(id, name, slug, semester, module_type, code)')
 
+  const { data: favRows } = await supabase
+    .from('module_favorites')
+    .select('module_id')
+    .eq('user_id', user.id)
+
+  const initialFavoriteIds = (favRows ?? []).map((r) => r.module_id)
+
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white border-b border-gray-100 px-6 py-3">
@@ -50,6 +57,8 @@ export default async function ModuleSearchPage() {
           <ProgramAccordion
             programs={programs}
             programModules={(programModules ?? []) as any[]}
+            userId={user.id}
+            initialFavoriteIds={initialFavoriteIds}
           />
         ) : (
           <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-12 text-center">
