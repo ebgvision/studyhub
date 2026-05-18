@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import React, { useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import FolderBrowser from './FolderBrowser'
 
@@ -29,14 +29,117 @@ type Comment = {
   username: string | null
 }
 
-function fileIcon(type: string | null) {
-  if (!type) return '📄'
-  if (type === 'pdf') return '📕'
-  if (['doc', 'docx'].includes(type)) return '📝'
-  if (['ppt', 'pptx'].includes(type)) return '📊'
-  if (['png', 'jpg', 'jpeg', 'gif'].includes(type)) return '🖼️'
-  if (['zip', 'rar'].includes(type)) return '🗜️'
-  return '📄'
+type FileMeta = { svg: React.ReactNode; label: string }
+
+function fileMeta(type: string | null): FileMeta {
+  const t = type ?? ''
+
+  // Ordner
+  if (t === 'folder') return {
+    label: 'Ordner',
+    svg: (
+      <svg viewBox="0 0 40 34" fill="none" className="w-9 h-9" xmlns="http://www.w3.org/2000/svg">
+        <path d="M2 6C2 4.343 3.343 3 5 3h10l4 5h14c1.657 0 3 1.343 3 3v18c0 1.657-1.343 3-3 3H5c-1.657 0-3-1.343-3-3V6z" fill="#d1d5db" stroke="#9ca3af" strokeWidth="1.5"/>
+        <path d="M2 11h36v18c0 1.657-1.343 3-3 3H5c-1.657 0-3-1.343-3-3V11z" fill="#e5e7eb" stroke="#9ca3af" strokeWidth="1.5"/>
+      </svg>
+    ),
+  }
+
+  // PDF
+  if (t === 'pdf') return {
+    label: 'PDF',
+    svg: (
+      <svg viewBox="0 0 36 44" fill="none" className="w-8 h-9" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 2h20l8 8v32a2 2 0 01-2 2H4a2 2 0 01-2-2V4a2 2 0 012-2z" fill="#f3f4f6" stroke="#9ca3af" strokeWidth="1.5"/>
+        <path d="M24 2l8 8h-8V2z" fill="#d1d5db" stroke="#9ca3af" strokeWidth="1.5"/>
+        <text x="5" y="33" fontSize="9" fontWeight="bold" fill="#6b7280" fontFamily="sans-serif">PDF</text>
+      </svg>
+    ),
+  }
+
+  // Bild
+  if (['png','jpg','jpeg','gif','svg','webp'].includes(t)) return {
+    label: 'Bild',
+    svg: (
+      <svg viewBox="0 0 36 44" fill="none" className="w-8 h-9" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 2h20l8 8v32a2 2 0 01-2 2H4a2 2 0 01-2-2V4a2 2 0 012-2z" fill="#f3f4f6" stroke="#9ca3af" strokeWidth="1.5"/>
+        <path d="M24 2l8 8h-8V2z" fill="#d1d5db" stroke="#9ca3af" strokeWidth="1.5"/>
+        <rect x="7" y="20" width="22" height="15" rx="1.5" fill="#e5e7eb" stroke="#9ca3af" strokeWidth="1"/>
+        <circle cx="12" cy="25" r="2.5" fill="#9ca3af"/>
+        <path d="M7 35l7-7 4 4 3-3 8 6H7z" fill="#9ca3af"/>
+      </svg>
+    ),
+  }
+
+  // Word
+  if (['doc','docx'].includes(t)) return {
+    label: 'Word',
+    svg: (
+      <svg viewBox="0 0 36 44" fill="none" className="w-8 h-9" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 2h20l8 8v32a2 2 0 01-2 2H4a2 2 0 01-2-2V4a2 2 0 012-2z" fill="#f3f4f6" stroke="#9ca3af" strokeWidth="1.5"/>
+        <path d="M24 2l8 8h-8V2z" fill="#d1d5db" stroke="#9ca3af" strokeWidth="1.5"/>
+        <line x1="8" y1="22" x2="28" y2="22" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round"/>
+        <line x1="8" y1="27" x2="28" y2="27" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round"/>
+        <line x1="8" y1="32" x2="20" y2="32" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round"/>
+      </svg>
+    ),
+  }
+
+  // Excel
+  if (['xls','xlsx'].includes(t)) return {
+    label: 'Excel',
+    svg: (
+      <svg viewBox="0 0 36 44" fill="none" className="w-8 h-9" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 2h20l8 8v32a2 2 0 01-2 2H4a2 2 0 01-2-2V4a2 2 0 012-2z" fill="#f3f4f6" stroke="#9ca3af" strokeWidth="1.5"/>
+        <path d="M24 2l8 8h-8V2z" fill="#d1d5db" stroke="#9ca3af" strokeWidth="1.5"/>
+        <rect x="7" y="20" width="22" height="14" rx="1" fill="none" stroke="#9ca3af" strokeWidth="1"/>
+        <line x1="7" y1="25" x2="29" y2="25" stroke="#9ca3af" strokeWidth="1"/>
+        <line x1="7" y1="30" x2="29" y2="30" stroke="#9ca3af" strokeWidth="1"/>
+        <line x1="16" y1="20" x2="16" y2="34" stroke="#9ca3af" strokeWidth="1"/>
+      </svg>
+    ),
+  }
+
+  // Präsentation
+  if (['ppt','pptx'].includes(t)) return {
+    label: 'Präsentation',
+    svg: (
+      <svg viewBox="0 0 36 44" fill="none" className="w-8 h-9" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 2h20l8 8v32a2 2 0 01-2 2H4a2 2 0 01-2-2V4a2 2 0 012-2z" fill="#f3f4f6" stroke="#9ca3af" strokeWidth="1.5"/>
+        <path d="M24 2l8 8h-8V2z" fill="#d1d5db" stroke="#9ca3af" strokeWidth="1.5"/>
+        <rect x="7" y="19" width="22" height="14" rx="1.5" fill="#e5e7eb" stroke="#9ca3af" strokeWidth="1"/>
+        <line x1="18" y1="33" x2="18" y2="38" stroke="#9ca3af" strokeWidth="1.5"/>
+        <line x1="13" y1="38" x2="23" y2="38" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round"/>
+      </svg>
+    ),
+  }
+
+  // Archiv
+  if (['zip','rar','7z'].includes(t)) return {
+    label: 'Archiv',
+    svg: (
+      <svg viewBox="0 0 36 44" fill="none" className="w-8 h-9" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 2h20l8 8v32a2 2 0 01-2 2H4a2 2 0 01-2-2V4a2 2 0 012-2z" fill="#f3f4f6" stroke="#9ca3af" strokeWidth="1.5"/>
+        <path d="M24 2l8 8h-8V2z" fill="#d1d5db" stroke="#9ca3af" strokeWidth="1.5"/>
+        <rect x="14" y="14" width="8" height="18" rx="1" fill="none" stroke="#9ca3af" strokeWidth="1"/>
+        <line x1="14" y1="18" x2="22" y2="18" stroke="#9ca3af" strokeWidth="1"/>
+        <line x1="14" y1="22" x2="22" y2="22" stroke="#9ca3af" strokeWidth="1"/>
+        <line x1="14" y1="26" x2="22" y2="26" stroke="#9ca3af" strokeWidth="1"/>
+        <rect x="16" y="28" width="4" height="4" rx="0.5" fill="#9ca3af"/>
+      </svg>
+    ),
+  }
+
+  // Fallback Dokument
+  return {
+    label: 'Datei',
+    svg: (
+      <svg viewBox="0 0 36 44" fill="none" className="w-8 h-9" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 2h20l8 8v32a2 2 0 01-2 2H4a2 2 0 01-2-2V4a2 2 0 012-2z" fill="#f3f4f6" stroke="#9ca3af" strokeWidth="1.5"/>
+        <path d="M24 2l8 8h-8V2z" fill="#d1d5db" stroke="#9ca3af" strokeWidth="1.5"/>
+      </svg>
+    ),
+  }
 }
 
 function formatDate(iso: string) {
@@ -247,6 +350,7 @@ export default function MaterialsSection({
           const isCommentsOpen = openCommentId === material.id
           const comments = commentsCache[material.id] ?? []
 
+          const meta = fileMeta(material.file_type)
           const groupedComments = comments.map((c, i) => ({
             ...c,
             isGrouped: i > 0 && comments[i - 1].user_id === c.user_id,
@@ -262,7 +366,11 @@ export default function MaterialsSection({
                 )}
 
                 <div className="flex items-start gap-3">
-                  <span className="text-xl flex-shrink-0">{fileIcon(material.file_type)}</span>
+                  {/* Datei-Icon mit Label */}
+                  <div className="flex-shrink-0 flex flex-col items-center gap-0.5 w-12">
+                    {meta.svg}
+                    <span className="text-[9px] font-semibold text-gray-400 uppercase tracking-wide leading-none text-center">{meta.label}</span>
+                  </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-medium text-sm text-gray-900 truncate">{material.title}</div>
                     {material.description && (
