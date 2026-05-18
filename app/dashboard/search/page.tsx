@@ -31,18 +31,17 @@ export default async function ModuleSearchPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white border-b border-gray-100 px-4 py-3">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Link href="/dashboard" className="text-gray-400 hover:text-teal-600 transition-colors text-sm flex-shrink-0">
-              ← <span className="hidden sm:inline">Dashboard</span>
+        <div className="max-w-5xl mx-auto flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <Link href="/dashboard" className="flex-shrink-0 text-sm text-gray-400 hover:text-teal-600 transition-colors font-medium">
+              ← Dashboard
             </Link>
             <span className="text-gray-200">/</span>
-            <span className="text-sm font-semibold text-gray-700">Module suchen</span>
+            <span className="text-sm font-semibold text-gray-700 truncate">Module suchen</span>
           </div>
           <form action={logout}>
-            <button type="submit" className="text-sm text-gray-400 hover:text-red-500 transition-colors flex-shrink-0">
-              <span className="hidden sm:inline">Ausloggen</span>
-              <span className="sm:hidden">↩</span>
+            <button type="submit" className="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-50 text-gray-500 hover:bg-red-50 hover:text-red-500 transition-colors flex-shrink-0">
+              ↩
             </button>
           </form>
         </div>

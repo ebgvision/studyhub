@@ -58,21 +58,14 @@ export default async function DashboardPage() {
       {/* Navbar */}
       <nav className="bg-white border-b border-gray-100 px-4 py-3">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
-          {/* Logo */}
-          <div className="flex items-center gap-2">
-            <span className="text-lg font-bold text-teal-600">StudyHub</span>
-            <span className="hidden sm:inline text-xs bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full font-medium">HS Koblenz</span>
-          </div>
-          {/* Aktionen */}
+          <span className="text-lg font-bold text-teal-600">StudyHub</span>
           <div className="flex items-center gap-3">
-            <span className="hidden md:block text-sm text-gray-400 truncate max-w-[200px]">{user.email}</span>
-            <Link href="/settings" className="flex items-center gap-1 text-sm text-gray-400 hover:text-teal-600 transition-colors">
-              ⚙️ <span className="hidden sm:inline">Einstellungen</span>
+            <Link href="/settings" className="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-50 text-gray-500 hover:bg-teal-50 hover:text-teal-600 transition-colors text-base">
+              ⚙️
             </Link>
             <form action={logout}>
-              <button type="submit" className="text-sm text-gray-400 hover:text-red-500 transition-colors">
-                <span className="hidden sm:inline">Ausloggen</span>
-                <span className="sm:hidden text-base">↩</span>
+              <button type="submit" className="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-50 text-gray-500 hover:bg-red-50 hover:text-red-500 transition-colors text-base">
+                ↩
               </button>
             </form>
           </div>
