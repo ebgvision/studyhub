@@ -55,7 +55,7 @@ export default async function ModulePage({
 
   const { data: materials } = await supabase
     .from('materials')
-    .select('*')
+    .select('*, files')
     .eq('module_id', module.id)
     .order('sort_score', { ascending: false })
 

@@ -2,6 +2,9 @@
 
 import { useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import FolderBrowser from './FolderBrowser'
+
+type FileEntry = { name: string; relativePath: string; url: string }
 
 type Material = {
   id: string
@@ -9,6 +12,7 @@ type Material = {
   description: string | null
   file_url: string | null
   file_type: string | null
+  files: FileEntry[] | null
   like_count: number
   outdated_count: number
   is_outdated_warned: boolean
@@ -49,8 +53,7 @@ export default function MaterialsSection({
   const [materials, setMaterials] = useState<Material[]>(initialMaterials)
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set(initialLikedIds))
   const [outdatedIds, setOutdatedIds] = useState<Set<string>>(new Set(initialOutdatedIds))
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
-  const [previewTitle, setPreviewTitle] = useState<string>('')
+  const [folderMaterial, setFolderMaterial] = useState<Material | null>(null)
   const supabase = createClient()
 
   const downloadFile = useCallback(async (url: string, filename: string) => {
@@ -68,6 +71,10 @@ export default function MaterialsSection({
     } catch {
       window.open(url, '_blank')
     }
+  }, [])
+
+  const openPreview = useCallback((url: string) => {
+    window.open(url, '_blank', 'noopener,noreferrer')
   }, [])
 
   async function toggleLike(material: Material) {
@@ -117,29 +124,13 @@ export default function MaterialsSection({
 
   return (
     <>
-      {/* Vorschau-Modal */}
-      {previewUrl && (
-        <div
-          className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
-          onClick={() => setPreviewUrl(null)}
-        >
-          <div
-            className="bg-white rounded-2xl overflow-hidden w-full max-w-3xl max-h-[85vh] flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-              <span className="text-sm font-semibold text-gray-700">{previewTitle || 'Vorschau'}</span>
-              <button onClick={() => setPreviewUrl(null)} className="text-gray-400 hover:text-gray-600 text-lg">✕</button>
-            </div>
-            <div className="flex-1 overflow-auto">
-              {previewUrl.match(/\.(png|jpg|jpeg|gif)(\?|$)/i) ? (
-                <img src={previewUrl} alt="Vorschau" className="w-full h-auto" />
-              ) : (
-                <iframe src={previewUrl} className="w-full h-[70vh]" title="Vorschau" />
-              )}
-            </div>
-          </div>
-        </div>
+      {/* Ordner-Browser Modal */}
+      {folderMaterial && folderMaterial.files && (
+        <FolderBrowser
+          title={folderMaterial.title}
+          files={folderMaterial.files}
+          onClose={() => setFolderMaterial(null)}
+        />
       )}
 
       <div className="space-y-2">
@@ -171,25 +162,34 @@ export default function MaterialsSection({
                   <div className="text-xs text-gray-400 mt-0.5">{formatDate(material.created_at)}</div>
                 </div>
 
-                {/* Vorschau + Download Buttons */}
-                {material.file_url && (
-                  <div className="flex gap-2 flex-shrink-0">
-                    {preview && (
-                      <button
-                        onClick={() => { setPreviewUrl(material.file_url!); setPreviewTitle(material.title) }}
-                        className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-medium hover:bg-gray-200 transition-colors"
-                      >
-                        👁 Vorschau
-                      </button>
-                    )}
+                {/* Buttons */}
+                <div className="flex gap-2 flex-shrink-0">
+                  {material.file_type === 'folder' ? (
                     <button
-                      onClick={() => downloadFile(material.file_url!, material.title)}
+                      onClick={() => setFolderMaterial(material)}
                       className="px-3 py-1.5 bg-teal-50 text-teal-600 rounded-lg text-xs font-medium hover:bg-teal-100 transition-colors"
                     >
-                      ↓ Herunterladen
+                      📁 Ordner öffnen
                     </button>
-                  </div>
-                )}
+                  ) : material.file_url ? (
+                    <>
+                      {preview && (
+                        <button
+                          onClick={() => openPreview(material.file_url!)}
+                          className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-medium hover:bg-gray-200 transition-colors"
+                        >
+                          👁 Vorschau
+                        </button>
+                      )}
+                      <button
+                        onClick={() => downloadFile(material.file_url!, material.title)}
+                        className="px-3 py-1.5 bg-teal-50 text-teal-600 rounded-lg text-xs font-medium hover:bg-teal-100 transition-colors"
+                      >
+                        ↓ Herunterladen
+                      </button>
+                    </>
+                  ) : null}
+                </div>
               </div>
 
               <div className="flex items-center gap-4 mt-3 pt-2 border-t border-gray-100">

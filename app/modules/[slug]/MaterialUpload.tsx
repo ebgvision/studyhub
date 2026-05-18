@@ -107,24 +107,25 @@ export default function MaterialUpload({
 
     try {
       if (isFolder && files.length > 1) {
-        const uploadedPaths: string[] = []
+        const uploadedFiles: { name: string; relativePath: string; url: string }[] = []
         for (let i = 0; i < files.length; i++) {
           const file = files[i]
           const relativePath = (file as any).webkitRelativePath || file.name
-          const storagePath = `${moduleId}/${Date.now()}-${relativePath}`
+          const storagePath = `${moduleId}/${Date.now()}-${i}-${file.name}`
           const { data, error: upErr } = await supabase.storage.from('materials').upload(storagePath, file)
           if (upErr) throw new Error(upErr.message)
-          uploadedPaths.push(data.path)
+          const { data: urlData } = supabase.storage.from('materials').getPublicUrl(data.path)
+          uploadedFiles.push({ name: file.name, relativePath, url: urlData.publicUrl })
           setProgress(Math.round(((i + 1) / files.length) * 100))
         }
-        const { data: urlData } = supabase.storage.from('materials').getPublicUrl(uploadedPaths[0])
         await supabase.from('materials').insert({
           module_id: moduleId,
           user_id: userId,
           title: title.trim(),
           description: `${files.length} Dateien · ${description.trim() || ''}`,
-          file_url: urlData.publicUrl,
+          file_url: uploadedFiles[0].url,
           file_type: 'folder',
+          files: uploadedFiles,
           sort_score: 0,
         })
       } else {
