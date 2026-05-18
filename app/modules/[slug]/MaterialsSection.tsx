@@ -54,6 +54,7 @@ export default function MaterialsSection({
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set(initialLikedIds))
   const [outdatedIds, setOutdatedIds] = useState<Set<string>>(new Set(initialOutdatedIds))
   const [folderMaterial, setFolderMaterial] = useState<Material | null>(null)
+  const [sortBy, setSortBy] = useState<'likes' | 'date'>('likes')
   const supabase = createClient()
 
   const downloadFile = useCallback(async (url: string, filename: string) => {
@@ -111,7 +112,10 @@ export default function MaterialsSection({
     }
   }
 
-  const sorted = [...materials].sort((a, b) => b.like_count - a.like_count)
+  const sorted = [...materials].sort((a, b) => {
+    if (sortBy === 'date') return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    return b.like_count - a.like_count
+  })
 
   if (sorted.length === 0) {
     return (
@@ -132,6 +136,22 @@ export default function MaterialsSection({
           onClose={() => setFolderMaterial(null)}
         />
       )}
+
+      {/* Sort Toggle */}
+      <div className="flex gap-2 mb-3">
+        <button
+          onClick={() => setSortBy('likes')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${sortBy === 'likes' ? 'bg-teal-600 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+        >
+          👍 Meiste Likes
+        </button>
+        <button
+          onClick={() => setSortBy('date')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${sortBy === 'date' ? 'bg-teal-600 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+        >
+          🕐 Neueste
+        </button>
+      </div>
 
       <div className="space-y-2">
         {sorted.map((material) => {
