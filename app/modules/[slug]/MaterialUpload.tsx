@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -40,17 +40,21 @@ export default function MaterialUpload({
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const folderNodeRef = useRef<HTMLInputElement | null>(null)
 
-  // Callback-Ref: feuert genau wenn der Input ins DOM kommt und setzt webkitdirectory
-  const folderInputRef = useCallback((node: HTMLInputElement | null) => {
-    folderNodeRef.current = node
-    if (node) {
-      node.setAttribute('webkitdirectory', '')
-      node.setAttribute('directory', '')
-      node.setAttribute('multiple', '')
+  // Ordner-Picker: Input dynamisch erstellen damit webkitdirectory zuverlässig funktioniert
+  function openFolderPicker() {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.setAttribute('webkitdirectory', '')
+    input.setAttribute('multiple', '')
+    input.onchange = () => {
+      const selected = Array.from(input.files ?? [])
+      if (selected.length === 0) return
+      const fName = (selected[0] as any).webkitRelativePath?.split('/')[0] ?? 'Ordner'
+      applyFiles(selected, true, fName)
     }
-  }, [])
+    input.click()
+  }
   const router = useRouter()
   const supabase = createClient()
 
@@ -185,7 +189,6 @@ export default function MaterialUpload({
         }`}
       >
         <input ref={fileInputRef} type="file" multiple accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.png,.jpg,.jpeg,.zip" onChange={handleFileInput} className="hidden" />
-        <input ref={folderInputRef} type="file" onChange={handleFolderInput} className="hidden" />
         {files.length === 0 ? (
           <>
             <div className="text-2xl mb-1">📂</div>
@@ -195,7 +198,7 @@ export default function MaterialUpload({
                 className="px-3 py-1 text-xs bg-white border border-gray-200 rounded-lg text-gray-600 hover:border-teal-400 hover:text-teal-600 transition-colors">
                 📄 Datei auswählen
               </button>
-              <button type="button" onClick={() => folderNodeRef.current?.click()}
+              <button type="button" onClick={openFolderPicker}
                 className="px-3 py-1 text-xs bg-white border border-gray-200 rounded-lg text-gray-600 hover:border-teal-400 hover:text-teal-600 transition-colors">
                 📁 Ordner auswählen
               </button>
