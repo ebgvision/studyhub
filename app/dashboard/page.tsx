@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { logout } from '@/app/auth/actions'
 import Link from 'next/link'
 import FavoritesSection from './FavoritesSection'
+import FeedbackChat from './FeedbackChat'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -23,6 +24,34 @@ export default async function DashboardPage() {
     .eq('user_id', user.id)
 
   const favoriteModuleIds = (favRows ?? []).map((r) => r.module_id)
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('is_anonymous, is_admin')
+    .eq('id', user.id)
+    .single()
+
+  const { data: rawFeedback } = await supabase
+    .from('feedback_messages')
+    .select('*')
+    .order('created_at', { ascending: true })
+
+  const feedbackUserIds = [...new Set((rawFeedback ?? []).map((m: any) => m.user_id).filter(Boolean))]
+  const { data: feedbackProfiles } = feedbackUserIds.length > 0
+    ? await supabase.from('profiles').select('id, username, is_anonymous').in('id', feedbackUserIds)
+    : { data: [] as { id: string; username: string | null; is_anonymous: boolean }[] }
+
+  const profileMap: Record<string, { username: string | null; is_anonymous: boolean }> = {}
+  for (const p of feedbackProfiles ?? []) profileMap[p.id] = { username: p.username, is_anonymous: p.is_anonymous }
+
+  const initialFeedback = (rawFeedback ?? []).map((m: any) => ({
+    id: m.id,
+    content: m.content,
+    created_at: m.created_at,
+    user_id: m.user_id,
+    username: profileMap[m.user_id]?.is_anonymous ? 'Anonym' : (profileMap[m.user_id]?.username ?? null),
+    is_anonymous: profileMap[m.user_id]?.is_anonymous ?? false,
+  }))
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -66,6 +95,32 @@ export default async function DashboardPage() {
 
         {/* Favoriten (Sterne) */}
         <FavoritesSection allModules={modules ?? []} userId={user.id} initialFavoriteIds={favoriteModuleIds} />
+
+        {/* Feedback-Bereich */}
+        <div>
+          {/* Mitmach-Banner */}
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 mb-3">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">💬</span>
+              <div>
+                <h2 className="text-sm font-bold text-amber-800">Deine Meinung zählt!</h2>
+                <p className="text-xs text-amber-700 mt-0.5 leading-relaxed">
+                  StudyHub ist noch in der Entwicklung — hilf uns, es besser zu machen!
+                  Schreib uns deine <strong>Wünsche, Ideen oder Verbesserungsvorschläge</strong> direkt hier rein.
+                  Jedes Feedback hilft uns weiter. 🙏
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <h2 className="text-sm font-bold text-gray-700 mb-2 px-1">💡 Feedback & Ideen</h2>
+          <FeedbackChat
+            userId={user.id}
+            isAnonymous={profile?.is_anonymous ?? false}
+            isAdmin={profile?.is_admin ?? false}
+            initialMessages={initialFeedback}
+          />
+        </div>
 
       </main>
     </div>
