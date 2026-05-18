@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -40,14 +40,15 @@ export default function MaterialUpload({
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const folderInputRef = useRef<HTMLInputElement>(null)
+  const folderNodeRef = useRef<HTMLInputElement | null>(null)
 
-  // webkitdirectory muss imperativ gesetzt werden (React erkennt es nicht als Prop)
-  useEffect(() => {
-    if (folderInputRef.current) {
-      folderInputRef.current.setAttribute('webkitdirectory', '')
-      folderInputRef.current.setAttribute('directory', '')
-      folderInputRef.current.setAttribute('multiple', '')
+  // Callback-Ref: feuert genau wenn der Input ins DOM kommt und setzt webkitdirectory
+  const folderInputRef = useCallback((node: HTMLInputElement | null) => {
+    folderNodeRef.current = node
+    if (node) {
+      node.setAttribute('webkitdirectory', '')
+      node.setAttribute('directory', '')
+      node.setAttribute('multiple', '')
     }
   }, [])
   const router = useRouter()
@@ -194,7 +195,7 @@ export default function MaterialUpload({
                 className="px-3 py-1 text-xs bg-white border border-gray-200 rounded-lg text-gray-600 hover:border-teal-400 hover:text-teal-600 transition-colors">
                 📄 Datei auswählen
               </button>
-              <button type="button" onClick={() => folderInputRef.current?.click()}
+              <button type="button" onClick={() => folderNodeRef.current?.click()}
                 className="px-3 py-1 text-xs bg-white border border-gray-200 rounded-lg text-gray-600 hover:border-teal-400 hover:text-teal-600 transition-colors">
                 📁 Ordner auswählen
               </button>
