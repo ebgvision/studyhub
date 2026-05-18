@@ -37,7 +37,6 @@ export default function Chat({
   const inputRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
 
-  // Realtime Subscription
   useEffect(() => {
     const channel = supabase
       .channel(`chat-${moduleId}`)
@@ -67,7 +66,6 @@ export default function Chat({
     return () => { supabase.removeChannel(channel) }
   }, [moduleId])
 
-  // Likes laden
   useEffect(() => {
     supabase.from('chat_likes').select('message_id').eq('user_id', userId)
       .then(({ data }) => {
@@ -75,13 +73,11 @@ export default function Chat({
       })
   }, [userId])
 
-  // Beim ersten Laden sofort nach unten scrollen (neueste Nachrichten sehen)
   useEffect(() => {
     const container = messagesContainerRef.current
     if (container) container.scrollTop = container.scrollHeight
   }, [])
 
-  // Bei neuen Nachrichten smooth nach unten scrollen
   useEffect(() => {
     if (messages.length > 0) {
       bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -170,7 +166,7 @@ export default function Chat({
       )}
 
       {/* Nachrichten */}
-      <div ref={messagesContainerRef} className="p-4 space-y-3 max-h-[500px] overflow-y-auto">
+      <div ref={messagesContainerRef} className="px-4 pt-3 pb-2 max-h-[500px] overflow-y-auto">
         {sorted.length === 0 && (
           <div className="text-center py-6 text-gray-400 text-sm">
             Noch keine Beiträge — starte die Diskussion! 👋
@@ -182,13 +178,17 @@ export default function Chat({
           const threadExpanded = expandedThreads.has(msg.id)
           const visibleReplies = threadExpanded ? replies : replies.slice(0, 3)
           const hiddenReplies = replies.length - 3
+          const prevMsg = idx > 0 ? visible[idx - 1] : null
+          // Only group if same user AND chronological sort AND no replies between
+          const isGrouped = sortBy === 'time' && prevMsg !== null && prevMsg.user_id === msg.user_id
 
           return (
-            <div key={msg.id}>
+            <div key={msg.id} className={isGrouped ? 'mt-0.5' : 'mt-3'}>
               <MessageRow
                 msg={msg}
                 isOwn={msg.user_id === userId}
                 liked={likedIds.has(msg.id)}
+                isGrouped={isGrouped}
                 onLike={() => toggleLike(msg)}
                 onComment={() => focusInput(msg)}
                 formatTime={formatTime}
@@ -196,19 +196,24 @@ export default function Chat({
 
               {/* Eingerückte Kommentare */}
               {replies.length > 0 && (
-                <div className="ml-8 mt-1 space-y-1 border-l-2 border-gray-100 pl-3">
-                  {visibleReplies.map((reply) => (
-                    <MessageRow
-                      key={reply.id}
-                      msg={reply}
-                      isOwn={reply.user_id === userId}
-                      liked={likedIds.has(reply.id)}
-                      onLike={() => toggleLike(reply)}
-                      onComment={() => focusInput(msg)}
-                      formatTime={formatTime}
-                      isReply
-                    />
-                  ))}
+                <div className="ml-8 mt-1 space-y-0.5 border-l-2 border-gray-100 pl-3">
+                  {visibleReplies.map((reply, rIdx) => {
+                    const prevReply = rIdx > 0 ? visibleReplies[rIdx - 1] : null
+                    const replyGrouped = prevReply !== null && prevReply.user_id === reply.user_id
+                    return (
+                      <MessageRow
+                        key={reply.id}
+                        msg={reply}
+                        isOwn={reply.user_id === userId}
+                        liked={likedIds.has(reply.id)}
+                        isGrouped={replyGrouped}
+                        onLike={() => toggleLike(reply)}
+                        onComment={() => focusInput(msg)}
+                        formatTime={formatTime}
+                        isReply
+                      />
+                    )
+                  })}
                   {hiddenReplies > 0 && !threadExpanded && (
                     <button
                       onClick={() => toggleThread(msg.id)}
@@ -227,25 +232,14 @@ export default function Chat({
                   )}
                 </div>
               )}
-
-              {/* Kommentieren-Button am letzten Beitrag */}
-              {idx === visible.length - 1 && (
-                <button
-                  onClick={() => focusInput(msg)}
-                  className="ml-0 mt-1 text-xs text-gray-400 hover:text-teal-600 transition-colors"
-                >
-                  ↩ Kommentieren
-                </button>
-              )}
             </div>
           )
         })}
 
-        {/* Mehr anzeigen */}
         {!showAll && hiddenCount > 0 && (
           <button
             onClick={() => setShowAll(true)}
-            className="w-full py-2 text-xs text-teal-600 hover:text-teal-700 font-medium border border-teal-200 rounded-xl hover:bg-teal-50 transition-colors"
+            className="w-full mt-3 py-2 text-xs text-teal-600 hover:text-teal-700 font-medium border border-teal-200 rounded-xl hover:bg-teal-50 transition-colors"
           >
             + {hiddenCount} weitere Beiträge anzeigen
           </button>
@@ -285,42 +279,61 @@ export default function Chat({
 }
 
 function MessageRow({
-  msg, isOwn, liked, onLike, onComment, formatTime, isReply = false,
+  msg, isOwn, liked, isGrouped, onLike, onComment, formatTime, isReply = false,
 }: {
   msg: Message
   isOwn: boolean
   liked: boolean
+  isGrouped: boolean
   onLike: () => void
   onComment: () => void
   formatTime: (s: string) => string
   isReply?: boolean
 }) {
   return (
-    <div className="flex gap-2 group">
-      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5 ${isOwn ? 'bg-teal-500 text-white' : 'bg-gray-200 text-gray-600'}`}>
-        {(msg.profiles?.username ?? 'A')[0].toUpperCase()}
+    <div className="flex items-start gap-2 group">
+      {/* Avatar — nur für erste Nachricht in Gruppe */}
+      <div className="flex-shrink-0 w-6 mt-0.5">
+        {!isGrouped ? (
+          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${isOwn ? 'bg-teal-500 text-white' : 'bg-gray-200 text-gray-600'}`}>
+            {(msg.profiles?.username ?? 'A')[0].toUpperCase()}
+          </div>
+        ) : null}
       </div>
+
+      {/* Inhalt */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-baseline gap-2 mb-0.5">
-          <span className="text-xs font-semibold text-gray-700">{isOwn ? 'Du' : (msg.profiles?.username ?? 'Anonym')}</span>
-          <span className="text-xs text-gray-400">{formatTime(msg.created_at)}</span>
-        </div>
-        <div className={`inline-block rounded-xl px-3 py-1.5 text-sm max-w-sm ${isOwn ? 'bg-teal-600 text-white' : 'bg-gray-100 text-gray-900'}`}>
+        {/* Name — nur für erste Nachricht in Gruppe */}
+        {!isGrouped && (
+          <div className="flex items-baseline gap-1.5 mb-0.5">
+            <span className="text-xs font-semibold text-gray-700">
+              {isOwn ? 'Du' : (msg.profiles?.username ?? 'Anonym')}
+            </span>
+          </div>
+        )}
+        <div className={`inline-block rounded-xl px-3 py-1.5 text-sm max-w-xs break-words ${isOwn ? 'bg-teal-600 text-white' : 'bg-gray-100 text-gray-900'}`}>
           {msg.content}
         </div>
-        <div className="flex items-center gap-3 mt-1">
+      </div>
+
+      {/* Side-Aktionen: erscheinen beim Hover rechts */}
+      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 self-center">
+        <span className="text-xs text-gray-400 whitespace-nowrap">{formatTime(msg.created_at)}</span>
+        <button
+          onClick={onLike}
+          className={`flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded-lg transition-colors hover:bg-gray-100 ${liked ? 'text-teal-600 font-medium' : 'text-gray-400'}`}
+        >
+          👍{msg.like_count > 0 ? ` ${msg.like_count}` : ''}
+        </button>
+        {!isReply && (
           <button
-            onClick={onLike}
-            className={`text-xs flex items-center gap-1 transition-colors ${liked ? 'text-teal-600 font-medium' : 'text-gray-400 hover:text-teal-500'}`}
+            onClick={onComment}
+            className="text-xs px-1.5 py-0.5 rounded-lg text-gray-400 hover:text-teal-600 hover:bg-gray-100 transition-colors"
+            title="Kommentieren"
           >
-            👍 {msg.like_count > 0 ? msg.like_count : ''}
+            ↩
           </button>
-          {!isReply && (
-            <button onClick={onComment} className="text-xs text-gray-400 hover:text-teal-600 transition-colors opacity-0 group-hover:opacity-100">
-              ↩ Kommentieren
-            </button>
-          )}
-        </div>
+        )}
       </div>
     </div>
   )

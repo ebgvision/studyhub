@@ -44,7 +44,14 @@ function formatDate(iso: string) {
 }
 
 function formatTime(iso: string) {
-  return new Date(iso).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  return new Date(iso).toLocaleString('de-DE', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  })
+}
+
+function avatarLetter(username: string | null) {
+  return (username ?? '?')[0].toUpperCase()
 }
 
 export default function MaterialsSection({
@@ -66,7 +73,6 @@ export default function MaterialsSection({
   const [folderMaterial, setFolderMaterial] = useState<Material | null>(null)
   const [sortBy, setSortBy] = useState<'likes' | 'date'>('likes')
 
-  // Comments state
   const [openCommentId, setOpenCommentId] = useState<string | null>(null)
   const [commentsCache, setCommentsCache] = useState<Record<string, Comment[]>>({})
   const [loadingComments, setLoadingComments] = useState<string | null>(null)
@@ -92,24 +98,20 @@ export default function MaterialsSection({
     }
   }, [])
 
-  const openPreview = useCallback((url: string) => {
-    window.open(url, '_blank', 'noopener,noreferrer')
-  }, [])
-
   async function toggleLike(material: Material) {
     const alreadyLiked = likedIds.has(material.id)
     if (alreadyLiked) {
       await supabase.from('material_likes').delete().eq('user_id', userId).eq('material_id', material.id)
       const newCount = material.like_count - 1
       await supabase.from('materials').update({ like_count: newCount, sort_score: newCount }).eq('id', material.id)
-      setLikedIds((prev) => { const n = new Set(prev); n.delete(material.id); return n })
-      setMaterials((prev) => prev.map((m) => m.id === material.id ? { ...m, like_count: newCount } : m))
+      setLikedIds(prev => { const n = new Set(prev); n.delete(material.id); return n })
+      setMaterials(prev => prev.map(m => m.id === material.id ? { ...m, like_count: newCount } : m))
     } else {
       await supabase.from('material_likes').insert({ user_id: userId, material_id: material.id })
       const newCount = material.like_count + 1
       await supabase.from('materials').update({ like_count: newCount, sort_score: newCount, last_liked_at: new Date().toISOString() }).eq('id', material.id)
-      setLikedIds((prev) => new Set([...prev, material.id]))
-      setMaterials((prev) => prev.map((m) => m.id === material.id ? { ...m, like_count: newCount } : m))
+      setLikedIds(prev => new Set([...prev, material.id]))
+      setMaterials(prev => prev.map(m => m.id === material.id ? { ...m, like_count: newCount } : m))
     }
   }
 
@@ -119,14 +121,14 @@ export default function MaterialsSection({
       await supabase.from('material_outdated_flags').delete().eq('user_id', userId).eq('material_id', material.id)
       const newCount = material.outdated_count - 1
       await supabase.from('materials').update({ outdated_count: newCount }).eq('id', material.id)
-      setOutdatedIds((prev) => { const n = new Set(prev); n.delete(material.id); return n })
-      setMaterials((prev) => prev.map((m) => m.id === material.id ? { ...m, outdated_count: newCount } : m))
+      setOutdatedIds(prev => { const n = new Set(prev); n.delete(material.id); return n })
+      setMaterials(prev => prev.map(m => m.id === material.id ? { ...m, outdated_count: newCount } : m))
     } else {
       await supabase.from('material_outdated_flags').insert({ user_id: userId, material_id: material.id })
       const newCount = material.outdated_count + 1
       await supabase.from('materials').update({ outdated_count: newCount }).eq('id', material.id)
-      setOutdatedIds((prev) => new Set([...prev, material.id]))
-      setMaterials((prev) => prev.map((m) => m.id === material.id ? { ...m, outdated_count: newCount } : m))
+      setOutdatedIds(prev => new Set([...prev, material.id]))
+      setMaterials(prev => prev.map(m => m.id === material.id ? { ...m, outdated_count: newCount } : m))
     }
   }
 
@@ -212,7 +214,6 @@ export default function MaterialsSection({
 
   return (
     <>
-      {/* Ordner-Browser Modal */}
       {folderMaterial && (
         <FolderBrowser
           title={folderMaterial.title}
@@ -246,11 +247,13 @@ export default function MaterialsSection({
           const isCommentsOpen = openCommentId === material.id
           const comments = commentsCache[material.id] ?? []
 
+          const groupedComments = comments.map((c, i) => ({
+            ...c,
+            isGrouped: i > 0 && comments[i - 1].user_id === c.user_id,
+          }))
+
           return (
-            <div
-              key={material.id}
-              className={`bg-white rounded-xl border ${isOutdatedWarn ? 'border-orange-200 bg-orange-50' : 'border-gray-100'}`}
-            >
+            <div key={material.id} className={`bg-white rounded-xl border ${isOutdatedWarn ? 'border-orange-200 bg-orange-50' : 'border-gray-100'}`}>
               <div className="p-4">
                 {isOutdatedWarn && (
                   <div className="text-orange-600 text-xs font-semibold mb-2 bg-orange-100 rounded-lg px-2 py-1 w-fit">
@@ -268,7 +271,6 @@ export default function MaterialsSection({
                     <div className="text-xs text-gray-400 mt-0.5">{formatDate(material.created_at)}</div>
                   </div>
 
-                  {/* Buttons */}
                   <div className="flex gap-2 flex-shrink-0">
                     {material.file_type === 'folder' ? (
                       <button
@@ -280,7 +282,7 @@ export default function MaterialsSection({
                     ) : material.file_url ? (
                       <>
                         <button
-                          onClick={() => openPreview(material.file_url!)}
+                          onClick={() => window.open(material.file_url!, '_blank', 'noopener,noreferrer')}
                           className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-medium hover:bg-gray-200 transition-colors"
                         >
                           👁 Vorschau
@@ -296,7 +298,7 @@ export default function MaterialsSection({
                   </div>
                 </div>
 
-                {/* Reactions + Comment toggle */}
+                {/* Aktionen unten */}
                 <div className="flex items-center gap-4 mt-3 pt-2 border-t border-gray-100">
                   <button
                     onClick={() => toggleLike(material)}
@@ -314,35 +316,53 @@ export default function MaterialsSection({
                     onClick={() => toggleComments(material)}
                     className={`flex items-center gap-1 text-xs transition-colors ml-auto ${isCommentsOpen ? 'text-teal-600 font-medium' : 'text-gray-400 hover:text-teal-500'}`}
                   >
-                    💬 {material.comment_count > 0 ? material.comment_count : ''} Kommentar{material.comment_count !== 1 ? 'e' : ''}
-                    <span className="ml-0.5">{isCommentsOpen ? '▲' : '▼'}</span>
+                    💬 {material.comment_count > 0 ? material.comment_count : ''} Kommentare {isCommentsOpen ? '▲' : '▼'}
                   </button>
                 </div>
               </div>
 
-              {/* Comments section */}
+              {/* Kommentarbereich */}
               {isCommentsOpen && (
-                <div className="border-t border-gray-100 bg-gray-50 rounded-b-xl px-4 py-3 space-y-3">
+                <div className="border-t border-gray-100 bg-gray-50 rounded-b-xl px-4 py-3">
                   {loadingComments === material.id ? (
-                    <p className="text-xs text-gray-400 text-center py-2">Lädt...</p>
-                  ) : comments.length === 0 ? (
-                    <p className="text-xs text-gray-400 text-center py-2">Noch keine Kommentare. Sei der Erste!</p>
+                    <p className="text-xs text-gray-400 text-center py-3">Lädt...</p>
+                  ) : groupedComments.length === 0 ? (
+                    <p className="text-xs text-gray-400 text-center py-3">Noch keine Kommentare. Sei der Erste!</p>
                   ) : (
-                    <div className="space-y-2">
-                      {comments.map(comment => (
-                        <div key={comment.id} className="bg-white rounded-lg px-3 py-2 border border-gray-100">
-                          <div className="flex items-center gap-2 mb-0.5">
-                            <span className="text-xs font-semibold text-gray-700">{comment.username ?? 'Anonym'}</span>
-                            <span className="text-xs text-gray-400">{formatTime(comment.created_at)}</span>
+                    <div className="space-y-0.5 mb-3">
+                      {groupedComments.map(comment => (
+                        <div key={comment.id} className={`flex gap-2.5 ${comment.isGrouped ? 'mt-0.5' : 'mt-3'}`}>
+                          <div className="flex-shrink-0 w-7">
+                            {!comment.isGrouped ? (
+                              <div className="w-7 h-7 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center text-xs font-bold">
+                                {avatarLetter(comment.username)}
+                              </div>
+                            ) : (
+                              <div className="w-7" />
+                            )}
                           </div>
-                          <p className="text-xs text-gray-700 leading-relaxed">{comment.content}</p>
+                          <div className="flex-1 min-w-0">
+                            {!comment.isGrouped && (
+                              <div className="flex items-baseline gap-2 mb-0.5">
+                                <span className="text-xs font-semibold text-gray-800">{comment.username ?? 'Anonym'}</span>
+                                <span className="text-xs text-gray-400">{formatTime(comment.created_at)}</span>
+                              </div>
+                            )}
+                            <div className="group relative flex items-center gap-2">
+                              <p className="text-xs text-gray-700 leading-relaxed">{comment.content}</p>
+                              {comment.isGrouped && (
+                                <span className="text-xs text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                                  {formatTime(comment.created_at)}
+                                </span>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </div>
                   )}
 
-                  {/* New comment input */}
-                  <div className="flex gap-2 pt-1">
+                  <div className="flex gap-2 pt-2 border-t border-gray-200">
                     <input
                       type="text"
                       placeholder="Kommentar schreiben..."
