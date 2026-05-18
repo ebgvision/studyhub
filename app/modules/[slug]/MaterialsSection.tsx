@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 type Material = {
@@ -50,7 +50,25 @@ export default function MaterialsSection({
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set(initialLikedIds))
   const [outdatedIds, setOutdatedIds] = useState<Set<string>>(new Set(initialOutdatedIds))
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [previewTitle, setPreviewTitle] = useState<string>('')
   const supabase = createClient()
+
+  const downloadFile = useCallback(async (url: string, filename: string) => {
+    try {
+      const res = await fetch(url)
+      const blob = await res.blob()
+      const blobUrl = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = blobUrl
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(blobUrl)
+    } catch {
+      window.open(url, '_blank')
+    }
+  }, [])
 
   async function toggleLike(material: Material) {
     const alreadyLiked = likedIds.has(material.id)
@@ -110,7 +128,7 @@ export default function MaterialsSection({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-              <span className="text-sm font-semibold text-gray-700">Vorschau</span>
+              <span className="text-sm font-semibold text-gray-700">{previewTitle || 'Vorschau'}</span>
               <button onClick={() => setPreviewUrl(null)} className="text-gray-400 hover:text-gray-600 text-lg">✕</button>
             </div>
             <div className="flex-1 overflow-auto">
@@ -158,21 +176,18 @@ export default function MaterialsSection({
                   <div className="flex gap-2 flex-shrink-0">
                     {preview && (
                       <button
-                        onClick={() => setPreviewUrl(material.file_url!)}
+                        onClick={() => { setPreviewUrl(material.file_url!); setPreviewTitle(material.title) }}
                         className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-medium hover:bg-gray-200 transition-colors"
                       >
                         👁 Vorschau
                       </button>
                     )}
-                    <a
-                      href={material.file_url}
-                      download
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      onClick={() => downloadFile(material.file_url!, material.title)}
                       className="px-3 py-1.5 bg-teal-50 text-teal-600 rounded-lg text-xs font-medium hover:bg-teal-100 transition-colors"
                     >
-                      ↓ Download
-                    </a>
+                      ↓ Herunterladen
+                    </button>
                   </div>
                 )}
               </div>

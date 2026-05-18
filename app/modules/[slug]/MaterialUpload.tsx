@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -41,6 +41,15 @@ export default function MaterialUpload({
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const folderInputRef = useRef<HTMLInputElement>(null)
+
+  // webkitdirectory muss imperativ gesetzt werden (React erkennt es nicht als Prop)
+  useEffect(() => {
+    if (folderInputRef.current) {
+      folderInputRef.current.setAttribute('webkitdirectory', '')
+      folderInputRef.current.setAttribute('directory', '')
+      folderInputRef.current.setAttribute('multiple', '')
+    }
+  }, [])
   const router = useRouter()
   const supabase = createClient()
 
@@ -175,7 +184,7 @@ export default function MaterialUpload({
         }`}
       >
         <input ref={fileInputRef} type="file" multiple accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.png,.jpg,.jpeg,.zip" onChange={handleFileInput} className="hidden" />
-        <input ref={folderInputRef} type="file" {...({ webkitdirectory: '', directory: '' } as any)} multiple onChange={handleFolderInput} className="hidden" />
+        <input ref={folderInputRef} type="file" onChange={handleFolderInput} className="hidden" />
         {files.length === 0 ? (
           <>
             <div className="text-2xl mb-1">📂</div>
