@@ -20,27 +20,33 @@ export default async function ModulePage({
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase.from('profiles').select('username, is_anonymous, is_admin').eq('id', user.id).single()
-  const isAdmin = profile?.is_admin ?? false
-
-  const { data: module } = await supabase
-    .from('modules')
-    .select('*')
-    .eq('slug', slug)
-    .single()
+  // Profil + Modul parallel laden
+  const [{ data: profile }, { data: module }] = await Promise.all([
+    supabase.from('profiles').select('username, is_anonymous, is_admin').eq('id', user.id).single(),
+    supabase.from('modules').select('*').eq('slug', slug).single(),
+  ])
 
   if (!module) notFound()
 
-  const { data: stats } = await supabase
-    .from('module_stats')
-    .select('study_days, grade, passed')
-    .eq('module_id', module.id)
+  const isAdmin = profile?.is_admin ?? false
+  const currentUserAnonymous = profile?.is_anonymous ?? false
 
-  const { data: rawMessages, error: messagesError } = await supabase
-    .from('chat_messages')
-    .select('*')
-    .eq('module_id', module.id)
-    .order('created_at', { ascending: true })
+  // Alle weiteren Abfragen parallel
+  const [
+    { data: stats },
+    { data: rawMessages },
+    { data: materials },
+    { data: myMaterialLikes },
+    { data: myOutdatedFlags },
+    { data: myStats },
+  ] = await Promise.all([
+    supabase.from('module_stats').select('study_days, grade, passed').eq('module_id', module.id),
+    supabase.from('chat_messages').select('*').eq('module_id', module.id).order('created_at', { ascending: true }),
+    supabase.from('materials').select('*, files').eq('module_id', module.id).order('sort_score', { ascending: false }),
+    supabase.from('material_likes').select('material_id').eq('user_id', user.id),
+    supabase.from('material_outdated_flags').select('material_id').eq('user_id', user.id),
+    supabase.from('module_stats').select('id').eq('module_id', module.id).eq('user_id', user.id).single(),
+  ])
 
   // Fetch profiles separately (avoids FK-join issues)
   const uniqueUserIds = [...new Set((rawMessages ?? []).map((m: any) => m.user_id).filter(Boolean))]
@@ -55,31 +61,6 @@ export default async function ModulePage({
     ...m,
     profiles: profileMap[m.user_id] ?? null,
   }))
-
-  const currentUserAnonymous = profile?.is_anonymous ?? false
-
-  const { data: materials } = await supabase
-    .from('materials')
-    .select('*, files')
-    .eq('module_id', module.id)
-    .order('sort_score', { ascending: false })
-
-  const { data: myMaterialLikes } = await supabase
-    .from('material_likes')
-    .select('material_id')
-    .eq('user_id', user.id)
-
-  const { data: myOutdatedFlags } = await supabase
-    .from('material_outdated_flags')
-    .select('material_id')
-    .eq('user_id', user.id)
-
-  const { data: myStats } = await supabase
-    .from('module_stats')
-    .select('id')
-    .eq('module_id', module.id)
-    .eq('user_id', user.id)
-    .single()
 
   // Durchschnitte
   const totalSubmissions = stats?.length ?? 0

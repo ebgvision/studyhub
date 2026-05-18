@@ -13,28 +13,19 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: modules } = await supabase
-    .from('modules')
-    .select('id, name, slug, code, semester, module_type')
-    .order('name')
-
-  const { data: favRows } = await supabase
-    .from('module_favorites')
-    .select('module_id')
-    .eq('user_id', user.id)
+  const [
+    { data: modules },
+    { data: favRows },
+    { data: profile },
+    { data: rawFeedback },
+  ] = await Promise.all([
+    supabase.from('modules').select('id, name, slug, code, semester, module_type').order('name'),
+    supabase.from('module_favorites').select('module_id').eq('user_id', user.id),
+    supabase.from('profiles').select('is_anonymous, is_admin').eq('id', user.id).single(),
+    supabase.from('feedback_messages').select('*').order('created_at', { ascending: true }),
+  ])
 
   const favoriteModuleIds = (favRows ?? []).map((r) => r.module_id)
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('is_anonymous, is_admin')
-    .eq('id', user.id)
-    .single()
-
-  const { data: rawFeedback } = await supabase
-    .from('feedback_messages')
-    .select('*')
-    .order('created_at', { ascending: true })
 
   const feedbackUserIds = [...new Set((rawFeedback ?? []).map((m: any) => m.user_id).filter(Boolean))]
   const { data: feedbackProfiles } = feedbackUserIds.length > 0
