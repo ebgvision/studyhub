@@ -311,29 +311,37 @@ function MessageRow({
             </span>
           </div>
         )}
-        <div className={`inline-block rounded-xl px-3 py-1.5 text-sm max-w-xs break-words ${isOwn ? 'bg-teal-600 text-white' : 'bg-gray-100 text-gray-900'}`}>
-          {msg.content}
-        </div>
-      </div>
 
-      {/* Side-Aktionen: erscheinen beim Hover rechts */}
-      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 self-center">
-        <span className="text-xs text-gray-400 whitespace-nowrap">{formatTime(msg.created_at)}</span>
-        <button
-          onClick={onLike}
-          className={`flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded-lg transition-colors hover:bg-gray-100 ${liked ? 'text-teal-600 font-medium' : 'text-gray-400'}`}
-        >
-          👍{msg.like_count > 0 ? ` ${msg.like_count}` : ''}
-        </button>
-        {!isReply && (
-          <button
-            onClick={onComment}
-            className="text-xs px-1.5 py-0.5 rounded-lg text-gray-400 hover:text-teal-600 hover:bg-gray-100 transition-colors"
-            title="Kommentieren"
-          >
-            ↩
-          </button>
-        )}
+        {/* Nachricht + direkt daneben die Aktionen */}
+        <div className="flex items-center gap-1.5">
+          <div className={`inline-block rounded-xl px-3 py-1.5 text-sm max-w-xs break-words ${isOwn ? 'bg-teal-600 text-white' : 'bg-gray-100 text-gray-900'}`}>
+            {msg.content}
+          </div>
+
+          {/* Aktionen direkt neben der Nachricht — auf Mobile immer sichtbar, auf Desktop nur beim Hover */}
+          <div className="flex items-center gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+            <button
+              onClick={onLike}
+              className={`flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded-lg transition-colors hover:bg-gray-100 ${liked ? 'text-teal-600 font-medium' : 'text-gray-400'}`}
+            >
+              👍{msg.like_count > 0 ? ` ${msg.like_count}` : ''}
+            </button>
+            {!isReply && (
+              <button
+                onClick={onComment}
+                className="text-xs px-1.5 py-0.5 rounded-lg text-gray-400 hover:text-teal-600 hover:bg-gray-100 transition-colors"
+                title="Kommentieren"
+              >
+                ↩
+              </button>
+            )}
+          </div>
+
+          {/* Timestamp ganz außen — auf Mobile immer sichtbar, auf Desktop nur beim Hover */}
+          <span className="text-xs text-gray-300 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity whitespace-nowrap ml-1">
+            {formatTime(msg.created_at)}
+          </span>
+        </div>
       </div>
     </div>
   )
