@@ -15,6 +15,10 @@ export async function login(formData: FormData) {
   const { error } = await supabase.auth.signInWithPassword(data)
 
   if (error) {
+    const msg = error.message?.toLowerCase() ?? ''
+    if (msg.includes('email not confirmed') || msg.includes('not confirmed')) {
+      redirect('/login?error=' + encodeURIComponent('Bitte bestätige zuerst deine E-Mail-Adresse. Schau in dein Postfach (auch Spam).'))
+    }
     redirect('/login?error=' + encodeURIComponent('E-Mail oder Passwort falsch.'))
   }
 
@@ -29,7 +33,8 @@ export async function register(formData: FormData) {
   const password = formData.get('password') as string
   const username = formData.get('username') as string
 
-  if (!email.endsWith('@hs-koblenz.de')) {
+  const isAllowed = email.endsWith('@hs-koblenz.de') || email === '08muhammed80@gmail.com'
+  if (!isAllowed) {
     redirect('/register?error=' + encodeURIComponent('Nur HS-Koblenz E-Mail-Adressen (@hs-koblenz.de) sind erlaubt.'))
   }
 
@@ -43,6 +48,13 @@ export async function register(formData: FormData) {
   })
 
   if (error) {
+    const msg = error.message?.toLowerCase() ?? ''
+    if (msg.includes('security purposes') || msg.includes('after') || msg.includes('rate')) {
+      redirect('/register?error=' + encodeURIComponent('Bitte warte kurz und versuche es dann erneut.'))
+    }
+    if (msg.includes('already registered') || msg.includes('already exists') || msg.includes('duplicate')) {
+      redirect('/register?error=' + encodeURIComponent('Diese E-Mail-Adresse ist bereits registriert. Bitte einloggen.'))
+    }
     redirect('/register?error=' + encodeURIComponent(error.message))
   }
 
