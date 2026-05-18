@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { register } from '@/app/auth/actions'
+import SubmitButton from './SubmitButton'
 
 export default function RegisterPage({
   searchParams,
@@ -112,12 +113,7 @@ async function SuccessOrForm({
         </div>
       )}
 
-      <button
-        type="submit"
-        className="w-full py-3 bg-teal-600 text-white rounded-xl font-semibold hover:bg-teal-700 transition-colors mt-2"
-      >
-        Kostenlosen Account erstellen
-      </button>
+      <SubmitButton label="Kostenlosen Account erstellen" />
 
       <p className="text-xs text-gray-400 text-center">
         Nur für Studierende der HS Koblenz (@hs-koblenz.de).
