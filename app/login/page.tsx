@@ -6,11 +6,14 @@ import { createClient } from '@/lib/supabase/server'
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>
+  searchParams: Promise<{ error?: string; verified?: string }>
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (user) redirect('/dashboard')
+
+  const params = await searchParams
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-teal-50 to-white flex items-center justify-center px-4">
       <div className="w-full max-w-md">
@@ -21,6 +24,20 @@ export default async function LoginPage({
           </Link>
           <p className="text-gray-500 mt-2">Willkommen zurück 👋</p>
         </div>
+
+        {/* Erfolg nach Verifizierung */}
+        {params.verified && (
+          <div className="bg-teal-50 border border-teal-200 text-teal-700 px-4 py-3 rounded-xl text-sm mb-4 text-center">
+            ✅ E-Mail erfolgreich bestätigt! Du kannst dich jetzt einloggen.
+          </div>
+        )}
+
+        {/* Fehlermeldung */}
+        {params.error && (
+          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm mb-4 text-center">
+            {params.error}
+          </div>
+        )}
 
         {/* Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
@@ -55,9 +72,6 @@ export default async function LoginPage({
               />
             </div>
 
-            {/* Fehlermeldung */}
-            <ErrorMessage searchParams={searchParams} />
-
             <button
               type="submit"
               className="w-full py-3 bg-teal-600 text-white rounded-xl font-semibold hover:bg-teal-700 transition-colors mt-2"
@@ -75,20 +89,5 @@ export default async function LoginPage({
         </p>
       </div>
     </main>
-  )
-}
-
-async function ErrorMessage({
-  searchParams,
-}: {
-  searchParams: Promise<{ error?: string }>
-}) {
-  const params = await searchParams
-  if (!params.error) return null
-
-  return (
-    <div className="bg-red-50 text-red-600 px-4 py-3 rounded-xl text-sm">
-      {params.error}
-    </div>
   )
 }
