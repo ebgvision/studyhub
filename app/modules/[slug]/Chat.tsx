@@ -330,7 +330,7 @@ function MessageRow({
 
         {/* Nachricht + direkt daneben die Aktionen */}
         <div className="flex items-center gap-1.5">
-          <div className={`inline-block rounded-xl px-3 py-1.5 text-sm max-w-xs break-words ${isOwn ? 'bg-teal-600 text-white' : 'bg-gray-100 text-gray-900'}`}>
+          <div className={`inline-block rounded-xl px-3 py-1.5 text-sm max-w-[200px] sm:max-w-xs break-words ${isOwn ? 'bg-teal-600 text-white' : 'bg-gray-100 text-gray-900'}`}>
             {msg.content}
           </div>
 

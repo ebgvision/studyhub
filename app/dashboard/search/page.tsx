@@ -47,7 +47,7 @@ export default async function ModuleSearchPage() {
         </div>
       </nav>
 
-      <main className="max-w-5xl mx-auto px-6 py-6 space-y-4">
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-4">
         <div>
           <h1 className="text-xl font-bold text-gray-900">Module suchen</h1>
           <p className="text-sm text-gray-400 mt-0.5">Wähle deinen Studiengang und klappe die Semester auf. Markiere Module mit ⭐ für schnellen Zugriff.</p>

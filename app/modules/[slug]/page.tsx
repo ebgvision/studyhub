@@ -107,20 +107,22 @@ export default async function ModulePage({
             <span className="text-gray-200">/</span>
             <span className="text-sm text-gray-600 font-medium truncate max-w-[200px]">{module.name}</span>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <Link href="/settings" className="text-sm text-gray-400 hover:text-teal-600 transition-colors">
-              ⚙️ Einstellungen
+              <span className="hidden sm:inline">⚙️ Einstellungen</span>
+              <span className="sm:hidden">⚙️</span>
             </Link>
             <form action={logout}>
               <button type="submit" className="text-sm text-gray-400 hover:text-red-500 transition-colors">
-                Ausloggen
+                <span className="hidden sm:inline">Ausloggen</span>
+                <span className="sm:hidden">↩</span>
               </button>
             </form>
           </div>
         </div>
       </nav>
 
-      <main className="max-w-4xl mx-auto px-6 py-6 space-y-5">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-5">
 
         {/* Modul-Header mit eingebetteten Stats */}
         <div className="bg-white rounded-2xl p-5 border border-gray-100">

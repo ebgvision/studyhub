@@ -65,7 +65,8 @@ export default async function DashboardPage() {
           <div className="flex items-center gap-4">
             <span className="text-sm text-gray-500 hidden sm:block">{user.email}</span>
             <Link href="/settings" className="text-sm text-gray-400 hover:text-teal-600 transition-colors">
-              ⚙️ Einstellungen
+              <span className="hidden sm:inline">⚙️ Einstellungen</span>
+              <span className="sm:hidden">⚙️</span>
             </Link>
             <form action={logout}>
               <button type="submit" className="text-sm text-gray-400 hover:text-red-500 transition-colors">
@@ -76,18 +77,18 @@ export default async function DashboardPage() {
         </div>
       </nav>
 
-      <main className="max-w-5xl mx-auto px-6 py-6 space-y-6">
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
 
         {/* Campus Banner kompakt */}
-        <div className="bg-teal-600 text-white rounded-2xl px-6 py-4 flex items-center justify-between">
+        <div className="bg-teal-600 text-white rounded-2xl px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="text-xs font-medium text-teal-200 mb-0.5">Fachbereich</div>
-            <div className="text-lg font-bold">Wirtschafts- und Sozialwissenschaften</div>
+            <div className="text-lg font-bold leading-snug">Wirtschafts- und Sozialwissenschaften</div>
             <div className="text-teal-300 text-xs mt-0.5">RheinAhrCampus Remagen · HS Koblenz</div>
           </div>
           <Link
             href="/dashboard/search"
-            className="flex-shrink-0 bg-white text-teal-700 px-4 py-2 rounded-xl text-sm font-bold hover:bg-teal-50 transition-colors"
+            className="self-start sm:self-auto flex-shrink-0 bg-white text-teal-700 px-4 py-2 rounded-xl text-sm font-bold hover:bg-teal-50 transition-colors"
           >
             🔍 Module suchen
           </Link>

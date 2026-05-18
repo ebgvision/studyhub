@@ -399,9 +399,37 @@ export default function MaterialsSection({
                       <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{material.description}</p>
                     )}
                     <div className="text-xs text-gray-400 mt-0.5">{formatDate(material.created_at)}</div>
+
+                    {/* Buttons auf Mobile unter dem Titel */}
+                    <div className="flex gap-2 mt-2 sm:hidden">
+                      {material.file_type === 'folder' ? (
+                        <button
+                          onClick={() => setFolderMaterial(material)}
+                          className="px-3 py-1.5 bg-teal-50 text-teal-600 rounded-lg text-xs font-medium hover:bg-teal-100 transition-colors"
+                        >
+                          📁 Ordner öffnen
+                        </button>
+                      ) : material.file_url ? (
+                        <>
+                          <button
+                            onClick={() => window.open(material.file_url!, '_blank', 'noopener,noreferrer')}
+                            className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-medium hover:bg-gray-200 transition-colors"
+                          >
+                            👁 Vorschau
+                          </button>
+                          <button
+                            onClick={() => downloadFile(material.file_url!, material.title)}
+                            className="px-3 py-1.5 bg-teal-50 text-teal-600 rounded-lg text-xs font-medium hover:bg-teal-100 transition-colors"
+                          >
+                            ↓ Laden
+                          </button>
+                        </>
+                      ) : null}
+                    </div>
                   </div>
 
-                  <div className="flex gap-2 flex-shrink-0">
+                  {/* Buttons auf Desktop rechts */}
+                  <div className="hidden sm:flex gap-2 flex-shrink-0">
                     {material.file_type === 'folder' ? (
                       <button
                         onClick={() => setFolderMaterial(material)}
@@ -429,7 +457,7 @@ export default function MaterialsSection({
                 </div>
 
                 {/* Aktionen unten */}
-                <div className="flex items-center gap-4 mt-3 pt-2 border-t border-gray-100">
+                <div className="flex items-center flex-wrap gap-3 mt-3 pt-2 border-t border-gray-100">
                   <button
                     onClick={() => toggleLike(material)}
                     className={`flex items-center gap-1 text-xs font-medium transition-colors ${likedIds.has(material.id) ? 'text-teal-600' : 'text-gray-400 hover:text-teal-500'}`}

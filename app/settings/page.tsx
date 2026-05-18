@@ -36,7 +36,7 @@ export default async function SettingsPage() {
         </div>
       </nav>
 
-      <main className="max-w-2xl mx-auto px-6 py-8 space-y-5">
+      <main className="max-w-2xl mx-auto px-4 sm:px-6 py-4 sm:py-8 space-y-5">
         <div>
           <h1 className="text-xl font-bold text-gray-900">Einstellungen</h1>
           <p className="text-sm text-gray-500 mt-1">Verwalte dein Konto und deine Präferenzen.</p>
