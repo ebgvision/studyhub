@@ -40,6 +40,7 @@ export default function MaterialUpload({
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const folderInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
   const supabase = createClient()
 
@@ -55,6 +56,13 @@ export default function MaterialUpload({
   function handleFileInput(e: React.ChangeEvent<HTMLInputElement>) {
     const selected = Array.from(e.target.files ?? [])
     applyFiles(selected, false)
+  }
+
+  function handleFolderInput(e: React.ChangeEvent<HTMLInputElement>) {
+    const selected = Array.from(e.target.files ?? [])
+    if (selected.length === 0) return
+    const fName = (selected[0] as any).webkitRelativePath?.split('/')[0] ?? 'Ordner'
+    applyFiles(selected, true, fName)
   }
 
   async function handleDrop(e: React.DragEvent) {
@@ -166,19 +174,22 @@ export default function MaterialUpload({
           dragging ? 'border-teal-500 bg-teal-50' : 'border-gray-300 hover:border-teal-400 hover:bg-gray-50'
         }`}
       >
-        <input
-          ref={fileInputRef}
-          type="file"
-          multiple
-          accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.png,.jpg,.jpeg,.zip"
-          onChange={handleFileInput}
-          className="hidden"
-        />
+        <input ref={fileInputRef} type="file" multiple accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.png,.jpg,.jpeg,.zip" onChange={handleFileInput} className="hidden" />
+        <input ref={folderInputRef} type="file" {...({ webkitdirectory: '', directory: '' } as any)} multiple onChange={handleFolderInput} className="hidden" />
         {files.length === 0 ? (
           <>
             <div className="text-2xl mb-1">📂</div>
             <p className="text-sm text-gray-600 font-medium">Datei oder Ordner hierher ziehen</p>
-            <p className="text-xs text-gray-400 mt-0.5">oder klicken um Datei(en) auszuwählen</p>
+            <div className="flex gap-2 justify-center mt-2" onClick={(e) => e.stopPropagation()}>
+              <button type="button" onClick={() => fileInputRef.current?.click()}
+                className="px-3 py-1 text-xs bg-white border border-gray-200 rounded-lg text-gray-600 hover:border-teal-400 hover:text-teal-600 transition-colors">
+                📄 Datei auswählen
+              </button>
+              <button type="button" onClick={() => folderInputRef.current?.click()}
+                className="px-3 py-1 text-xs bg-white border border-gray-200 rounded-lg text-gray-600 hover:border-teal-400 hover:text-teal-600 transition-colors">
+                📁 Ordner auswählen
+              </button>
+            </div>
           </>
         ) : (
           <div className="text-sm text-teal-700 font-medium">
@@ -187,7 +198,7 @@ export default function MaterialUpload({
               : files.length === 1
                 ? `📄 ${files[0].name}`
                 : `📄 ${files.length} Dateien ausgewählt`}
-            <p className="text-xs text-gray-400 mt-0.5 font-normal">Klicken zum Ändern</p>
+            <p className="text-xs text-gray-400 mt-0.5 font-normal">Nochmal ziehen oder Button klicken zum Ändern</p>
           </div>
         )}
       </div>

@@ -30,7 +30,7 @@ export default function Chat({
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set())
   const [sending, setSending] = useState(false)
   const [sortBy, setSortBy] = useState<'time' | 'likes'>('time')
-  const [showAll, setShowAll] = useState(false)
+  const [showAll, setShowAll] = useState(true)
   const [expandedThreads, setExpandedThreads] = useState<Set<string>>(new Set())
   const bottomRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
