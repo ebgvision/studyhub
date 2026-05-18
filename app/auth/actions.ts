@@ -38,6 +38,7 @@ export async function register(formData: FormData) {
     password,
     options: {
       data: { username },
+      emailRedirectTo: 'https://studyhub-5wqkfq1ft-muhammed-avsar-s-projects.vercel.app/login?verified=true',
     },
   })
 
