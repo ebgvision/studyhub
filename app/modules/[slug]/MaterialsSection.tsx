@@ -173,14 +173,12 @@ export default function MaterialsSection({
                     </button>
                   ) : material.file_url ? (
                     <>
-                      {preview && (
-                        <button
-                          onClick={() => openPreview(material.file_url!)}
-                          className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-medium hover:bg-gray-200 transition-colors"
-                        >
-                          👁 Vorschau
-                        </button>
-                      )}
+                      <button
+                        onClick={() => openPreview(material.file_url!)}
+                        className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-medium hover:bg-gray-200 transition-colors"
+                      >
+                        👁 Vorschau
+                      </button>
                       <button
                         onClick={() => downloadFile(material.file_url!, material.title)}
                         className="px-3 py-1.5 bg-teal-50 text-teal-600 rounded-lg text-xs font-medium hover:bg-teal-100 transition-colors"
