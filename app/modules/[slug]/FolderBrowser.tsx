@@ -88,7 +88,7 @@ function TreeView({
             <>
               <span className="text-lg flex-shrink-0">{fileIcon(node.name)}</span>
               <span className="flex-1 text-sm text-gray-800 truncate">{node.name}</span>
-              <div className="flex gap-1.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="flex gap-1.5 flex-shrink-0">
                 {canPreview(node.name) && (
                   <a
                     href={node.url}
