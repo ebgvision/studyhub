@@ -1,8 +1,26 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+
+async function collectFilesFromEntry(entry: FileSystemEntry): Promise<File[]> {
+  if (entry.isFile) {
+    return new Promise((resolve) => {
+      (entry as FileSystemFileEntry).file((f) => resolve([f]))
+    })
+  }
+  if (entry.isDirectory) {
+    const reader = (entry as FileSystemDirectoryEntry).createReader()
+    return new Promise((resolve) => {
+      reader.readEntries(async (entries) => {
+        const nested = await Promise.all(entries.map(collectFilesFromEntry))
+        resolve(nested.flat())
+      })
+    })
+  }
+  return []
+}
 
 export default function MaterialUpload({
   moduleId,
@@ -15,26 +33,44 @@ export default function MaterialUpload({
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [files, setFiles] = useState<File[]>([])
-  const [folderMode, setFolderMode] = useState(false)
+  const [isFolder, setIsFolder] = useState(false)
+  const [folderName, setFolderName] = useState('')
+  const [dragging, setDragging] = useState(false)
   const [loading, setLoading] = useState(false)
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
   const supabase = createClient()
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const selected = Array.from(e.target.files ?? [])
+  function applyFiles(selected: File[], folder = false, fName = '') {
     setFiles(selected)
-    // Auto-Titel aus erstem Dateinamen
+    setIsFolder(folder)
+    setFolderName(fName)
     if (selected.length > 0 && !title) {
-      if (folderMode && selected.length > 1) {
-        // Ordnername aus Pfad extrahieren
-        const path = (selected[0] as any).webkitRelativePath as string
-        const folder = path.split('/')[0]
-        setTitle(folder)
-      } else {
-        setTitle(selected[0].name.replace(/\.[^.]+$/, ''))
-      }
+      setTitle(fName || selected[0].name.replace(/\.[^.]+$/, ''))
+    }
+  }
+
+  function handleFileInput(e: React.ChangeEvent<HTMLInputElement>) {
+    const selected = Array.from(e.target.files ?? [])
+    applyFiles(selected, false)
+  }
+
+  async function handleDrop(e: React.DragEvent) {
+    e.preventDefault()
+    setDragging(false)
+    const items = Array.from(e.dataTransfer.items)
+    const entries = items.map((i) => i.webkitGetAsEntry()).filter(Boolean) as FileSystemEntry[]
+
+    const hasFolder = entries.some((en) => en.isDirectory)
+    if (hasFolder) {
+      const folderEntry = entries.find((en) => en.isDirectory)!
+      const collectedFiles = await collectFilesFromEntry(folderEntry)
+      applyFiles(collectedFiles, true, folderEntry.name)
+    } else {
+      const dropped = Array.from(e.dataTransfer.files)
+      applyFiles(dropped, false)
     }
   }
 
@@ -48,22 +84,17 @@ export default function MaterialUpload({
     await supabase.from('profiles').upsert({ id: userId }, { onConflict: 'id' })
 
     try {
-      if (folderMode && files.length > 1) {
-        // Ordner-Upload: alle Dateien mit relativem Pfad
+      if (isFolder && files.length > 1) {
         const uploadedPaths: string[] = []
         for (let i = 0; i < files.length; i++) {
           const file = files[i]
           const relativePath = (file as any).webkitRelativePath || file.name
           const storagePath = `${moduleId}/${Date.now()}-${relativePath}`
-          const { data, error: upErr } = await supabase.storage
-            .from('materials')
-            .upload(storagePath, file)
+          const { data, error: upErr } = await supabase.storage.from('materials').upload(storagePath, file)
           if (upErr) throw new Error(upErr.message)
           uploadedPaths.push(data.path)
           setProgress(Math.round(((i + 1) / files.length) * 100))
         }
-
-        // Ersten File als Haupt-URL, den ganzen Ordner als Eintrag
         const { data: urlData } = supabase.storage.from('materials').getPublicUrl(uploadedPaths[0])
         await supabase.from('materials').insert({
           module_id: moduleId,
@@ -75,14 +106,12 @@ export default function MaterialUpload({
           sort_score: 0,
         })
       } else {
-        // Einzelne Datei
         const file = files[0]
         const ext = file.name.split('.').pop()
         const path = `${moduleId}/${Date.now()}.${ext}`
         const { data, error: upErr } = await supabase.storage.from('materials').upload(path, file)
         if (upErr) throw new Error(upErr.message)
         const { data: urlData } = supabase.storage.from('materials').getPublicUrl(data.path)
-
         await supabase.from('materials').insert({
           module_id: moduleId,
           user_id: userId,
@@ -97,7 +126,8 @@ export default function MaterialUpload({
       setTitle('')
       setDescription('')
       setFiles([])
-      setFolderMode(false)
+      setIsFolder(false)
+      setFolderName('')
       setOpen(false)
       router.refresh()
     } catch (err: any) {
@@ -123,44 +153,42 @@ export default function MaterialUpload({
     <form onSubmit={handleUpload} className="bg-gray-50 rounded-xl p-4 space-y-3 border border-gray-200">
       <div className="flex items-center justify-between">
         <h4 className="font-semibold text-gray-900 text-sm">Material hochladen</h4>
-        {/* Einzel / Ordner Toggle */}
-        <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs">
-          <button type="button" onClick={() => setFolderMode(false)}
-            className={`px-3 py-1.5 font-medium transition-colors ${!folderMode ? 'bg-teal-600 text-white' : 'bg-white text-gray-500'}`}>
-            Datei
-          </button>
-          <button type="button" onClick={() => setFolderMode(true)}
-            className={`px-3 py-1.5 font-medium transition-colors ${folderMode ? 'bg-teal-600 text-white' : 'bg-white text-gray-500'}`}>
-            Ordner
-          </button>
-        </div>
+        <button type="button" onClick={() => setOpen(false)} className="text-gray-400 hover:text-gray-600 text-lg leading-none">✕</button>
       </div>
 
-      {/* Datei-Auswahl (Pflicht) */}
-      <div>
-        <label className="block text-xs font-medium text-gray-700 mb-1">
-          {folderMode ? 'Ordner auswählen *' : 'Datei auswählen *'}
-        </label>
-        {folderMode ? (
-          <input
-            type="file"
-            {...({ webkitdirectory: '', directory: '' } as any)}
-            multiple
-            required
-            onChange={handleFileChange}
-            className="w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100"
-          />
+      {/* Drop-Zone */}
+      <div
+        onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={handleDrop}
+        onClick={() => fileInputRef.current?.click()}
+        className={`w-full border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-colors ${
+          dragging ? 'border-teal-500 bg-teal-50' : 'border-gray-300 hover:border-teal-400 hover:bg-gray-50'
+        }`}
+      >
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.png,.jpg,.jpeg,.zip"
+          onChange={handleFileInput}
+          className="hidden"
+        />
+        {files.length === 0 ? (
+          <>
+            <div className="text-2xl mb-1">📂</div>
+            <p className="text-sm text-gray-600 font-medium">Datei oder Ordner hierher ziehen</p>
+            <p className="text-xs text-gray-400 mt-0.5">oder klicken um Datei(en) auszuwählen</p>
+          </>
         ) : (
-          <input
-            type="file"
-            accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.png,.jpg,.jpeg,.zip"
-            required
-            onChange={handleFileChange}
-            className="w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100"
-          />
-        )}
-        {files.length > 1 && (
-          <p className="text-xs text-teal-600 mt-1">{files.length} Dateien ausgewählt</p>
+          <div className="text-sm text-teal-700 font-medium">
+            {isFolder
+              ? `📁 Ordner: ${folderName} · ${files.length} Dateien`
+              : files.length === 1
+                ? `📄 ${files[0].name}`
+                : `📄 ${files.length} Dateien ausgewählt`}
+            <p className="text-xs text-gray-400 mt-0.5 font-normal">Klicken zum Ändern</p>
+          </div>
         )}
       </div>
 

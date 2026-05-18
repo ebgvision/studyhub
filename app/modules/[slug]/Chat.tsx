@@ -33,6 +33,7 @@ export default function Chat({
   const [showAll, setShowAll] = useState(false)
   const [expandedThreads, setExpandedThreads] = useState<Set<string>>(new Set())
   const bottomRef = useRef<HTMLDivElement>(null)
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
 
@@ -74,9 +75,17 @@ export default function Chat({
       })
   }, [userId])
 
-  // Auto-scroll bei neuen Nachrichten
+  // Beim ersten Laden sofort nach unten scrollen (neueste Nachrichten sehen)
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const container = messagesContainerRef.current
+    if (container) container.scrollTop = container.scrollHeight
+  }, [])
+
+  // Bei neuen Nachrichten smooth nach unten scrollen
+  useEffect(() => {
+    if (messages.length > 0) {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
   }, [messages.length])
 
   async function sendMessage() {
@@ -161,7 +170,7 @@ export default function Chat({
       )}
 
       {/* Nachrichten */}
-      <div className="p-4 space-y-3 max-h-[500px] overflow-y-auto">
+      <div ref={messagesContainerRef} className="p-4 space-y-3 max-h-[500px] overflow-y-auto">
         {sorted.length === 0 && (
           <div className="text-center py-6 text-gray-400 text-sm">
             Noch keine Beiträge — starte die Diskussion! 👋
