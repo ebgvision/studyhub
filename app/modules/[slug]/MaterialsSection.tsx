@@ -125,10 +125,10 @@ export default function MaterialsSection({
   return (
     <>
       {/* Ordner-Browser Modal */}
-      {folderMaterial && folderMaterial.files && (
+      {folderMaterial && (
         <FolderBrowser
           title={folderMaterial.title}
-          files={folderMaterial.files}
+          files={folderMaterial.files ?? []}
           onClose={() => setFolderMaterial(null)}
         />
       )}
