@@ -8,6 +8,9 @@ export async function middleware(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      cookieOptions: {
+        maxAge: 60 * 60 * 24 * 365, // 1 Jahr
+      },
       cookies: {
         getAll() {
           return request.cookies.getAll()
@@ -18,7 +21,7 @@ export async function middleware(request: NextRequest) {
           )
           supabaseResponse = NextResponse.next({ request })
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options as any)
+            supabaseResponse.cookies.set(name, value, { maxAge: 60 * 60 * 24 * 365, ...options } as any)
           )
         },
       },
