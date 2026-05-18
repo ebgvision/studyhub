@@ -1,11 +1,16 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { login } from '@/app/auth/actions'
+import { createClient } from '@/lib/supabase/server'
 
-export default function LoginPage({
+export default async function LoginPage({
   searchParams,
 }: {
   searchParams: Promise<{ error?: string }>
 }) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user) redirect('/dashboard')
   return (
     <main className="min-h-screen bg-gradient-to-br from-teal-50 to-white flex items-center justify-center px-4">
       <div className="w-full max-w-md">
